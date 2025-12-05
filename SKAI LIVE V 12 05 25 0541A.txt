@@ -3476,7 +3476,7 @@ echo '<script>(function(){
       card = document.createElement("div");
       card.id = "skai-why-card";
       card.className = "skai-why-card";
-      card.innerHTML = "<details aria-live=\\"polite\\"><summary>Why these picks</summary><div class=\\"content\\"></div></details>";
+      card.innerHTML = "<details><summary>Why these picks</summary><div class=\\"content\\" aria-live=\\"polite\\"></div></details>";
       host.appendChild(card);
     }
     return card;
@@ -6601,7 +6601,7 @@ th{background:#f9fafb}
 
 
   <!-- CANONICAL Main Skip & Hit block (collapsible, collapsed by default) -->
-  <details class="skai-skiphit skai-skiphit--main skai-details-collapsible" role="region" aria-label="Skip &amp; Hit - Main Balls">
+  <details class="skai-skiphit skai-skiphit--main skai-details-collapsible" aria-label="Skip &amp; Hit - Main Balls">
     <summary class="skai-details-summary">
       <h3 class="skai-h3">Skip &amp; Hit - Main Balls</h3>
       <span class="skai-details-caret" aria-hidden="true"></span>
@@ -6916,7 +6916,7 @@ th{background:#f9fafb}
 </div>
 
   <!-- CANONICAL Extra Skip & Hit block (collapsible, collapsed by default) -->
-  <details class="skai-skiphit skai-skiphit--extra skai-details-collapsible" role="region" aria-label="Skip &amp; Hit - Extra Balls">
+  <details class="skai-skiphit skai-skiphit--extra skai-details-collapsible" aria-label="Skip &amp; Hit - Extra Balls">
     <summary class="skai-details-summary">
       <h3 class="skai-h3">Skip &amp; Hit - Extra Balls</h3>
       <span class="skai-details-caret" aria-hidden="true"></span>
