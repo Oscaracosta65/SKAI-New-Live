@@ -7,7 +7,7 @@
  * [ACCESS]      Membership & public-game gating
  * [CONFIG]      JSON config load/normalize/validate + lottery_id resolution
  * [DATA]        DB fetch: draws, saved sets, meta, user history
- * [LOGIC]       Pure computation (Skip/Hit, MCMC, AI helpers) � no HTML/DB
+ * [LOGIC]       Pure computation (Skip/Hit, MCMC, AI helpers) - no HTML/DB
  * [SCORING]     Backtest + optimizer scoring + ranking
  * [SAVE]        Save predictions / save templates
  * [STATE]       Build UI-ready variables + safe escaping
@@ -94,7 +94,7 @@ if ($app->isClient('site')) {
 try {
     if ((string)$in->getString('ok', '') === 'saved') {
         $src = preg_replace('/[^a-z0-9_\-]/i', '', (string)$in->getString('src', 'skip_hit')) ?: 'skip_hit';
-        $app->enqueueMessage('Saved to your dashboard � (' . $src . ')', 'message'); // cleaned separator
+        $app->enqueueMessage('Saved to your dashboard - (' . $src . ')', 'message'); // cleaned separator
     }
 } catch (\Throwable $__) { /* ignore */ }
 
@@ -103,7 +103,7 @@ try {
 // ========================================================================
 // [ACCESS] MEMBERSHIP / PUBLIC-GAME GATING
 // ========================================================================
-/* SKAI: Access-control helper � determine if current user is allowed for this game */
+/* SKAI: Access-control helper - determine if current user is allowed for this game */
 
 
 // [ADDED] Additional non-breaking security headers
@@ -127,7 +127,7 @@ if (session_status() === PHP_SESSION_NONE) {
 echo '<div id="skai-live" class="skai-visually-hidden" aria-live="polite" aria-atomic="true"></div>';
 
 
-/* SKAI: Access-control helper � determine if current user is allowed for this game */
+/* SKAI: Access-control helper - determine if current user is allowed for this game */
 $currUser   = Factory::getUser();
 $userGroups = $currUser->groups ?? [];
 
@@ -625,7 +625,7 @@ $labelInput = implode(' - ', $parts);
             $evidenceJson = mb_substr($evidenceJson, 0, 64000, '8bit');
         }
 
-        // Optional next_draw_date/next_draw_at � prefer POST, then DB meta, then config; else NULL
+        // Optional next_draw_date/next_draw_at - prefer POST, then DB meta, then config; else NULL
         // CHG: DO NOT reset to NULL here. These may already be resolved above from POST/meta.
         $nextDrawDateSql = (isset($nextDrawDateSql) && trim((string)$nextDrawDateSql) !== '')
             ? substr(trim((string)$nextDrawDateSql), 0, 10)
@@ -690,11 +690,11 @@ $labelInput = implode(' - ', $parts);
         }
         if ($drawSessionSql === '') { $drawSessionSql = null; }
 
-        // Build insert object (ONLY known columns) � deduped keys, sanitized values
+        // Build insert object (ONLY known columns) - deduped keys, sanitized values
  // CHG: Force canonical source for SKAI saves (prevents Heatmap branch on dashboard)
 $source = 'skai_prediction';
 
-// CHG: Build a SKAI settings blob so dashboard can render �Run parameters�
+// CHG: Build a SKAI settings blob so dashboard can render -Run parameters-
 $skaiSettings = [
     'analysis'     => 'SKAI',
     'auto_tune'    => isset($autoTune) ? (int)$autoTune : null,
@@ -757,7 +757,7 @@ $row = (object) [
     'draw_session'        => $drawSessionSql,
 
     // Skip/Auto-Tune knobs (persist only when provided)
-    // (kept ONCE here � duplicates removed)
+    // (kept ONCE here - duplicates removed)
     'laplace_k'           => isset($laplaceK)   ? (int)$laplaceK   : null,
     'skip_window'         => ($skipWindow > 0)  ? (int)$skipWindow : null,
     'auto_tune'           => isset($autoTune)   ? (int)$autoTune   : null,
@@ -770,7 +770,7 @@ $row = (object) [
     'decay'               => $decay     ?? null,
     'chain_len'           => $chainLen  ?? null,
 
-    // Weights (0�100)
+    // Weights (0-100)
     'freq_weight'         => $freqW   ?? null,
     'skip_weight'         => $skipW   ?? null,
     'hist_weight'         => $histW   ?? null,
@@ -1115,7 +1115,7 @@ $db->setQuery($queryLottery);
 $lotteryId = (int) $db->loadResult();
 
 if ($lotteryId <= 0) {
-    // If we can�t resolve a valid lottery_id, abort to avoid saving bad references
+    // If we can-t resolve a valid lottery_id, abort to avoid saving bad references
     $app->enqueueMessage('We couldn\'t resolve the lottery id for this game.', 'error');
     echo "<!-- SKAI error: lottery_id lookup failed -->";
     return;
@@ -1224,7 +1224,7 @@ if (!function_exists('skai_quote_table')) {
     function skai_quote_table($db, string $name): string {
         $n = trim($name);
         if ($n === '') { return ''; }
-        // If caller didn�t include "#__", add it so replacePrefix can work
+        // If caller didn-t include "#__", add it so replacePrefix can work
         if (strpos($n, '#__') !== 0) { $n = '#__' . $n; }
         return $db->quoteName($db->replacePrefix($n));
     }
@@ -1261,7 +1261,7 @@ if ((int)($lotteryId ?? 0) === 0) {
     }
 
 /* ==========================================================================
-   SKAI � Section 2: Data Fetching, Skip & Hit, Feature Extraction (PHP)
+   SKAI - Section 2: Data Fetching, Skip & Hit, Feature Extraction (PHP)
    ========================================================================== */
 // [Unified] Legacy per-post save path fully retired. All saving is handled by the
 // SKAI comprehensive handler above (CSRF, membership, canonicalization, evidence, PRG).
@@ -1447,8 +1447,8 @@ if (!function_exists('skai_calculateSkipsAndProbabilities')) {
             return [[], [], null, [], []];
         }
 
-        // --- Zero-exclusion rule (#43): allow 0 only for daily games (range 0�9) ---
-        // Heuristic: if the maximum observed ball = 9, treat as daily game � allow zero; else exclude zero.
+        // --- Zero-exclusion rule (#43): allow 0 only for daily games (range 0-9) ---
+        // Heuristic: if the maximum observed ball = 9, treat as daily game - allow zero; else exclude zero.
         $allowZero = ($maxBallObserved <= 9);
 
         // Apply zero exclusion on the normalized stream
@@ -1512,10 +1512,34 @@ if (!function_exists('skai_calculateSkipsAndProbabilities')) {
             $hits   = (int) ($drawCounts[$n] ?? 0);
             $trials = $N; // one "trial" per draw for overall rate summary
             $p      = ($hits + $K) / max(1, ($trials + 2 * $K)); // guard divide-by-zero
+
+            // --- Calculate median_gap for Pattern Intelligence ---
+            // Gap = number of draws between consecutive hits of this number
+            $idxs = $hitIdxs[$n] ?? [];
+            $gaps = [];
+            $numHits = count($idxs);
+            if ($numHits >= 2) {
+                for ($g = 1; $g < $numHits; $g++) {
+                    $gaps[] = $idxs[$g] - $idxs[$g - 1];
+                }
+            }
+            $medianGap = null;
+            if (!empty($gaps)) {
+                sort($gaps, SORT_NUMERIC);
+                $cnt = count($gaps);
+                $mid = (int) floor($cnt / 2);
+                if ($cnt % 2 === 0) {
+                    $medianGap = (int) round(($gaps[$mid - 1] + $gaps[$mid]) / 2);
+                } else {
+                    $medianGap = (int) $gaps[$mid];
+                }
+            }
+
             $histProbs[$n] = [
                 'p_hit_given_k'  => (float) $p,
                 'support_trials' => (int) $trials,
                 'support_hits'   => (int) $hits,
+                'median_gap'     => $medianGap,
             ];
         }
 
@@ -1561,7 +1585,7 @@ if (!function_exists('skai_pattern_hint')) {
             $parts[] = "Estimated hit chance: " . skai_fmt_pct((float)$prob, 1);
         }
         // Keep it short, single line; screen readers will read the full string.
-        return implode(' � ', $parts); // use a clean bullet separator
+        return implode(' - ', $parts); // use a clean bullet separator
     }
 }
 
@@ -1634,8 +1658,7 @@ if (!empty($mainSkips)) {
         $hi   = (int)  ($mainHistProbs[$n]['support_hits'] ?? 0);
         $hits = (int)  ($mainDrawCounts[$n] ?? 0);
         // Lightweight Pattern Intelligence label
-        // NOTE: median_gap is not produced by skai_calculateSkipsAndProbabilities() in this chunk,
-        // so this will be null unless another upstream block adds it.
+        // median_gap is now calculated by skai_calculateSkipsAndProbabilities() for proper pattern classification
         $medianGap = $mainHistProbs[$n]['median_gap'] ?? null;
         $pattern = 'Transition';
         if ((int)$skip === 0) {
@@ -1685,8 +1708,7 @@ if ($hasExtra && !empty($extraSkips)) {
         $hi   = (int)  ($extraHistProbs[$n]['support_hits'] ?? 0);
         $hits = (int)  ($extraDrawCounts[$n] ?? 0);
         // Lightweight Pattern Intelligence label
-        // NOTE: median_gap is not produced by skai_calculateSkipsAndProbabilities() in this chunk,
-        // so this will be null unless another upstream block adds it.
+        // median_gap is now calculated by skai_calculateSkipsAndProbabilities() for proper pattern classification
         $medianGap = $extraHistProbs[$n]['median_gap'] ?? null;
         $pattern = 'Transition';
         if ((int)$skip === 0) {
@@ -1745,7 +1767,7 @@ if (!function_exists('skai_cooccurrenceCounts')) {
         $tail = array_slice($history, -$k);
         $freq = [];
 
-        // Zero-exclusion rule (#43): allow 0 only for daily games (range 0�9).
+        // Zero-exclusion rule (#43): allow 0 only for daily games (range 0-9).
         // Heuristic matches core SKAI math: if max observed <= 9, treat as daily.
         $maxObserved = 0;
         foreach ($tail as $row) {
@@ -2275,7 +2297,7 @@ $skaiMain = skai_features_from_history(
     $mainMax,                    // domain (max main ball)
     $pickSize,                   // pick size
     [
-        'allowZero' => ($mainMax <= 9 && empty($hasExtra)),             // daily 0�9 games ONLY; never for bonus/extra games
+        'allowZero' => ($mainMax <= 9 && empty($hasExtra)),             // daily 0-9 games ONLY; never for bonus/extra games
         'decay'     => (float)($lotteryConfig['recency_decay'] ?? 0.9), // EWMA decay default
     ]
 );
@@ -2565,7 +2587,7 @@ echo <<<HTML
 HTML;
 
 /* =======================================================================
- * Section 2.9 � (consolidated) Save handler
+ * Section 2.9 - (consolidated) Save handler
  * Note: The canonical POST save logic lives in Section 3 below.
  * =====================================================================*/
  
@@ -2940,7 +2962,7 @@ echo '<script>
         if(!document.hidden){
           form.__skaiSaving = false;
           disableButtons(form, false);
-          try{ live.textContent = "Save status unknown � please check your dashboard."; }catch(_){}
+          try{ live.textContent = "Save status unknown - please check your dashboard."; }catch(_){}
         }
       }, 3000);
     }, true);
@@ -2955,7 +2977,7 @@ echo '<script>
   else document.addEventListener("DOMContentLoaded", scan, {once:true});
 })();</script>';
 
-// === Pattern Intelligence badge (Label + K + W) � Sorcerer-safe, a11y friendly ===
+// === Pattern Intelligence badge (Label + K + W) - Sorcerer-safe, a11y friendly ===
 echo '<script>
 /* ==========================================================
    SKAI JS Block I: Performance Index (PI) Badge Wiring
@@ -3044,8 +3066,8 @@ echo '<script>
       var w=getWin();
       var parts=["PI: "+label,"K="+k];
       if(w>0) parts.push("W="+w);
-el.textContent = parts.join(" � ");
-el.title = "Pattern Intelligence � " + label + " (Laplace K & active window)";
+el.textContent = parts.join(" - ");
+el.title = "Pattern Intelligence - " + label + " (Laplace K & active window)";
 
       try{ window.dispatchEvent(new CustomEvent("skai:pi:changed",{detail:{label:label,k:k,w:w}})); }catch(_){}
     }catch(_){}
@@ -3210,7 +3232,7 @@ function readBalls(sel){
   else { document.addEventListener("DOMContentLoaded",function(){ setTimeout(runOnce,0); },{once:true}); }
 })();</script>';
 
-// === Why-this-pick (tiny helper): attach 2�3 evidence bullets per number ===
+// === Why-this-pick (tiny helper): attach 2-3 evidence bullets per number ===
 echo '<script>
 /* ==========================================================
    SKAI JS Block L: Smoothed Histogram Event Cache
@@ -3232,7 +3254,7 @@ echo '<script>
   function onSmooth(e){ try{ SMOOTH = (e && e.detail) || null; }catch(_){} }
   window.addEventListener("skai:hist:smoothed", onSmooth, false);
 
-  // Legacy helper (currently unused) � kept for reference but fully disabled.
+  // Legacy helper (currently unused) - kept for reference but fully disabled.
   /*
   function getHistFor(n){
     try{
@@ -3342,13 +3364,13 @@ echo '<script>
             }
             reasons.push(
               "Over the last " + rowsUsed + " draws it has hit about " +
-              pct.toFixed(1).replace(/\\.0$/, "") + "% of the time � a " + band + "."
+              pct.toFixed(1).replace(/\\.0$/, "") + "% of the time - a " + band + "."
             );
           }
         }
       }
 
-      // --- 3) Co-occurrence context (�travelling partners�) ---------------
+      // --- 3) Co-occurrence context (-travelling partners-) ---------------
       // Export format: SKAI_COOC.byNum[n] = { m: count, ... }
       var coocAll = (window.SKAI_COOC || {}).byNum || {};
       var coocMap = coocAll[n];
@@ -3417,7 +3439,7 @@ echo '<script>
         var skip = currentSkipOf(n);
         var reasons = whyForNumber(n, skip);
         if (reasons.length) {
-          var msg = reasons.join(" � ");
+          var msg = reasons.join(" - ");
 
           try {
             node.setAttribute("title", msg);              // simple tooltip
@@ -3454,14 +3476,14 @@ echo '<script>(function(){
       card = document.createElement("div");
       card.id = "skai-why-card";
       card.className = "skai-why-card";
-      card.innerHTML = "<details open aria-live=\\"polite\\"><summary>Why these picks</summary><div class=\\"content\\"></div></details>";
+      card.innerHTML = "<details><summary>Why these picks</summary><div class=\\"content\\" aria-live=\\"polite\\"></div></details>";
       host.appendChild(card);
     }
     return card;
   }
 function readReasons(node){
   var msg = node.getAttribute("data-skai-why") || node.getAttribute("title") || "";
-  return msg ? msg.split(/\s*�\s*/).filter(Boolean) : [];
+  return msg ? msg.split(/\s*-\s*/).filter(Boolean) : [];
 }
 
   function buildRow(n, reasons){
@@ -3592,7 +3614,7 @@ echo '<script>(function(){
       if (!sub || !body) return;
 
       var label = classifyPattern();
-sub.textContent = "Pattern: " + label + "  �  Source: Skip & Hit + ML";
+sub.textContent = "Pattern: " + label + "  -  Source: Skip & Hit + ML";
 
 
       while(body.firstChild) body.removeChild(body.firstChild);
@@ -3614,7 +3636,7 @@ sub.textContent = "Pattern: " + label + "  �  Source: Skip & Hit + ML";
     }catch(_){}
   }
   function safeRender(){
-    // Evidence Preview card disabled by request � no auto-render anywhere.
+    // Evidence Preview card disabled by request - no auto-render anywhere.
     return;
   }
   // Evidence Preview listeners intentionally disabled (keep function as a no-op).
@@ -3635,7 +3657,7 @@ echo '<script>(function(){ "use strict";
     var __seen = Object.create(null);
     window.__skaiOnce = function(id){
       if (__seen[id]) {
-        try { console.warn("[SKAI] DUPLICATE " + id + " � delete the SECOND copy"); } catch(_){}
+        try { console.warn("[SKAI] DUPLICATE " + id + " - delete the SECOND copy"); } catch(_){}
         return false;
       }
       __seen[id] = 1;
@@ -3693,7 +3715,7 @@ echo '<script>(function(){
     }catch(_){}
   }
   function safeRender(){
-    // Evidence Preview card disabled by request � no auto-render anywhere.
+    // Evidence Preview card disabled by request - no auto-render anywhere.
     return;
   }
   // Evidence Preview listeners intentionally disabled (keep function as a no-op).
@@ -3854,7 +3876,7 @@ echo '<script>(function(){
     say("Auto-Tune started"+fmtWin(w)+". Exploring up to one hundred windows.");
     try{
       if (window.skaiProgress && typeof window.skaiProgress.show === "function"){
-        window.skaiProgress.show("SKAI is analyzing your draw history�");
+        window.skaiProgress.show("SKAI is analyzing your draw history-");
       }
     }catch(_){}
   }, false);
@@ -3866,7 +3888,7 @@ echo '<script>(function(){
       say("Auto-Tune progress"+fmtWin(w)+". Avg score "+(s.toFixed ? s.toFixed(3) : s));
       try{
         if (window.skaiProgress && typeof window.skaiProgress.setStatus === "function"){
-          window.skaiProgress.setStatus("SKAI is testing different history windows (around " + w + " draws)�");
+          window.skaiProgress.setStatus("SKAI is testing different history windows (around " + w + " draws)-");
         }
       }catch(_){}
     }
@@ -3877,7 +3899,7 @@ echo '<script>(function(){
     say("Auto-Tune complete. Best"+fmtWin(w)+".");
     try{
       if (window.skaiProgress && typeof window.skaiProgress.setStatus === "function"){
-        window.skaiProgress.setStatus("SKAI is locking in the best-performing settings�");
+        window.skaiProgress.setStatus("SKAI is locking in the best-performing settings-");
       }
     }catch(_){}
   }, false);
@@ -3886,7 +3908,7 @@ echo '<script>(function(){
     say("Training models. Please hold.");
     try{
       if (window.skaiProgress && typeof window.skaiProgress.setStatus === "function"){
-        window.skaiProgress.setStatus("SKAI is training its models on your tuned setup�");
+        window.skaiProgress.setStatus("SKAI is training its models on your tuned setup-");
       }
     }catch(_){}
   }, false);
@@ -3895,7 +3917,7 @@ echo '<script>(function(){
     say("Models ready. Predictions updated.");
     try{
       if (window.skaiProgress && typeof window.skaiProgress.done === "function"){
-        window.skaiProgress.done("Prediction ready � tuned to your game�s history.");
+        window.skaiProgress.done("Prediction ready - tuned to your game-s history.");
       }
     }catch(_){}
   }, false);
@@ -3933,7 +3955,7 @@ echo '<script id="skai-emit-helpers">(function(){
 // Quick sanity log (gated to avoid I/O spikes in production)
 // [CHANGE] Only log when Joomla debug is enabled
 if (!empty($isDebug)) {
-    error_log('[SKAI] Section 2 ready � inputDim=' . $skaiInputDim
+    error_log('[SKAI] Section 2 ready - inputDim=' . $skaiInputDim
         . ', mainRows=' . count($fullMainHistory)
         . ', extraRows=' . count($fullExtraHistory));
 }
@@ -4086,9 +4108,9 @@ echo '<script>(function(){
 
 
 /* ---------------------------------------------------------------------------
- * SKAI � Server-side Save Handler
- * Joomla 5.1.2 � Sorcerer-safe � Inserts into #__user_saved_numbers
- * Triggers via: <form method="post"> � <input type="hidden" name="save_set" value="1">
+ * SKAI - Server-side Save Handler
+ * Joomla 5.1.2 - Sorcerer-safe - Inserts into #__user_saved_numbers
+ * Triggers via: <form method="post"> - <input type="hidden" name="save_set" value="1">
  * Captures: main_numbers[], extra_ball_numbers[], top_combos_json, evidence_json, params[...]
  * ---------------------------------------------------------------------------*/
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_set'])) {
@@ -4393,9 +4415,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_set'])) {
 <?php
 
 /**
- * SKAI � Section 5/9: Analytics Engine (Skip�Hit + Hybrid Scoring + Backtests + Tuning)
+ * SKAI - Section 5/9: Analytics Engine (Skip-Hit + Hybrid Scoring + Backtests + Tuning)
  *
- * EXPECTS (from Sections 1�3):
+ * EXPECTS (from Sections 1-3):
  *   - $lotteryName, $selectedGameId
  *   - $lotteryConfig (assoc):
  *       ['main_ball_columns' => [...],
@@ -4521,10 +4543,10 @@ $forceOneBasedExtra = array_key_exists('extra_one_based', $lotteryConfig)
   ? (bool)$lotteryConfig['extra_one_based']
   : ($extraMax > 9);
 
-// Main: allow zero only on tiny 0�9 games and only when there is no extra-ball stream
+// Main: allow zero only on tiny 0-9 games and only when there is no extra-ball stream
 $allowZeroMain  = ($mainMax > 0 && $mainMax <= 9) && !$hasExtra;
 
-// Extra: allow zero only if not forced one-based and the domain fits 0�9
+// Extra: allow zero only if not forced one-based and the domain fits 0-9
 $allowZeroExtra = !$forceOneBasedExtra && ($extraMax > 0 && $extraMax <= 9);
 
 // Defensive: ensure main ball column list is an array
@@ -4768,7 +4790,7 @@ foreach ($cvResults as $W => $score) {
       'bestWindow'  => (int)$bestWindowInt,
       'gamma'       => is_null($gammaBest) ? null : (float)$gammaBest,
       'beta'        => is_null($betaBest)  ? null : (float)$betaBest,
-      // CHG: copy polish � remove encoding artifact and keep meaning precise.
+      // CHG: copy polish - remove encoding artifact and keep meaning precise.
       'objective'   => 'maximize cross-validated score; prefer lower EMD; ties favor smaller W',
       'candidates'  => $candidates,
       'scored'      => $scored,
@@ -4790,7 +4812,7 @@ echo '<div id="skai-anchor" data-skai-label="', $labelAttr, '" style="display:no
 echo '<template id="skai-server-json" data-type="application/json" style="display:none">', $skaiServerJson, '</template>';
 
 ?>
-<!-- SKAI � Consolidated, de-duplicated, organized CSS (single file)
+<!-- SKAI - Consolidated, de-duplicated, organized CSS (single file)
      Sorcerer-safe: emits one <style id="skai-consolidated"> block you can paste once. -->
 <style id="skai-consolidated">
 /* ======================================================================
@@ -4896,7 +4918,7 @@ body{
 }
 
 /* -------------------------------------------------
-   SKAI Results Header � premium hierarchy + rhythm
+   SKAI Results Header - premium hierarchy + rhythm
    ------------------------------------------------- */
 .skai-results-header{
   display:flex;
@@ -4951,7 +4973,7 @@ body{
   margin-left:4px;
 }
 
-/* Evidence note � calmer, clearer */
+/* Evidence note - calmer, clearer */
 .skai-why-note{
   margin-top:8px;
   font-size:0.86rem;
@@ -5126,6 +5148,41 @@ th{background:#f9fafb}
 #skai-adv-toggle[aria-expanded="true"] .carat{transform:rotate(0deg)!important}
 .skai-collapsible-body .help{margin-top:6px;margin-bottom:12px}
 
+/* === SKAI Details Collapsible (Skip & Hit tables, etc.) === */
+.skai-details-collapsible{
+  border:1px solid var(--gray-200,#e5e7eb);
+  border-radius:8px;
+  margin:12px 0;
+  background:var(--white,#fff);
+}
+.skai-details-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  padding:12px 16px;
+  background:var(--gray-50,#f9fafb);
+  border-radius:8px;
+  user-select:none;
+  list-style:none;
+}
+.skai-details-summary::-webkit-details-marker{display:none}
+.skai-details-summary::marker{display:none}
+.skai-details-summary .skai-h3{margin:0;font-size:1rem;font-weight:600}
+.skai-details-caret{
+  display:inline-block;
+  width:0;height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-top:8px solid var(--accent,#6366f1);
+  transition:transform .2s ease;
+}
+.skai-details-collapsible[open] .skai-details-caret{transform:rotate(180deg)}
+.skai-details-content{
+  padding:16px;
+  border-top:1px solid var(--gray-200,#e5e7eb);
+}
+
 /* NOTE:
    Let JS control open/closed state via .skai-collapsed and inline styles.
    We do NOT force all collapsibles open here, and we keep the toggle clickable.
@@ -5244,9 +5301,9 @@ th{background:#f9fafb}
 }
 
 /* =========================
-   11.5) SKAI RESULTS PANEL � STABILITY + POLISH
+   11.5) SKAI RESULTS PANEL - STABILITY + POLISH
    Fixes:
-   - Hyperparameters �jumping� (pins alignment + reserves space)
+   - Hyperparameters -jumping- (pins alignment + reserves space)
    - Button consistency (chips + copy button match)
    - Ball pills regain premium weight
    - Save AI block separated as its own calm sub-card
@@ -5326,7 +5383,7 @@ th{background:#f9fafb}
   text-align:left !important;
 }
 
-/* Reserve a little space so it doesn�t �snap� during render */
+/* Reserve a little space so it doesn-t -snap- during render */
 #skai-param-status-body{
   min-height:22px;              /* prevents vertical twitch */
   display:block;
@@ -5340,11 +5397,11 @@ th{background:#f9fafb}
 
 
 /* =========================================================
-   11.9) RESULTS PANEL POLISH � buttons, balls, save-card
+   11.9) RESULTS PANEL POLISH - buttons, balls, save-card
    (Non-breaking overrides; safe to remove later)
    ========================================================= */
 
-/* Toolbar buttons � single source of truth
+/* Toolbar buttons - single source of truth
    ---------------------------------------------
    We already style Top 10/15/20 + Copy picks
    inside the scoped toolbar at Section 11.5:
@@ -5358,7 +5415,7 @@ th{background:#f9fafb}
    - unintended theme bleed elsewhere
    --------------------------------------------- */
 
-/* (intentionally left blank � scoped toolbar styles apply) */
+/* (intentionally left blank - scoped toolbar styles apply) */
 
 
 /* --- 3) Restore main / extra ball look (no thin ring) --- */
@@ -5417,7 +5474,7 @@ th{background:#f9fafb}
    12) EVIDENCE / WHY CARD UI
    ========================= */
 
-/* Evidence / Why panel � visible, premium, WCAG-friendly */
+/* Evidence / Why panel - visible, premium, WCAG-friendly */
 .skai-why-card{
   display:none; /* Temporarily hidden per product decision */
   margin-top:14px;
@@ -5474,7 +5531,7 @@ th{background:#f9fafb}
 }
 
 /* -------------------------------------------------
-   SKAI �Why This Pick?� � premium evidence layout
+   SKAI -Why This Pick?- - premium evidence layout
    (Used inside tooltips / evidence card)
    ------------------------------------------------- */
 .skai-why-head{
@@ -5582,7 +5639,7 @@ th{background:#f9fafb}
 .skai-why-pop .skai-x{float:right;border:0;background:transparent;font-size:1rem;cursor:pointer}
 
 /* =========================
-   13) RESULTS � LOADING + READY STATES
+   13) RESULTS - LOADING + READY STATES
    Premium CLS-safe handoff
    ========================= */
 
@@ -5595,7 +5652,7 @@ th{background:#f9fafb}
   padding:10px 0;
 }
 
-/* Loading shell reads like a calm �system card� */
+/* Loading shell reads like a calm -system card- */
 .skai-loading-shell{
   width:100%;
   max-width:520px;
@@ -5681,7 +5738,7 @@ th{background:#f9fafb}
 }
 
 /* =========================
-   13) SKAI RESULTS PANEL � PREMIUM UI POLISH
+   13) SKAI RESULTS PANEL - PREMIUM UI POLISH
    Apple/Stripe-level hierarchy, rhythm, contrast
    ========================= */
 
@@ -5729,7 +5786,7 @@ th{background:#f9fafb}
   line-height:1.45;
 }
 
-/* Main + Extra layout � calmer rhythm, premium spacing */
+/* Main + Extra layout - calmer rhythm, premium spacing */
 .skai-results-body{
   display:grid;
   grid-template-columns:1fr;
@@ -5737,7 +5794,7 @@ th{background:#f9fafb}
   margin-top:6px;
 }
 
-/* Sub-panels for main/extra � clearer hierarchy */
+/* Sub-panels for main/extra - clearer hierarchy */
 .skai-results-section{
   border:1px solid rgba(0,0,0,.07);
   border-radius:12px;
@@ -5771,7 +5828,7 @@ th{background:#f9fafb}
   line-height:1.4;
 }
 
-/* Ball row layout � consistent wrapping + spacing */
+/* Ball row layout - consistent wrapping + spacing */
 .skai-results-balls,
 .skai-ai-main,
 #aiPredictedNumbers{
@@ -5788,7 +5845,7 @@ th{background:#f9fafb}
   border-color:rgba(0,0,0,.06);
 }
 
-/* Give extra row a subtle �label rhythm� if it uses a heading */
+/* Give extra row a subtle -label rhythm- if it uses a heading */
 .skai-results-section--extra .skai-results-section-title{
   font-weight:800;
 }
@@ -5857,7 +5914,7 @@ th{background:#f9fafb}
   margin:8px 0;
 }
 
-/* Confidence / hyperparameter meta row � layout-stable, no jitter */
+/* Confidence / hyperparameter meta row - layout-stable, no jitter */
 .skai-results-meta{
   display:flex;
   flex-wrap:wrap;
@@ -5871,7 +5928,7 @@ th{background:#f9fafb}
   align-items:flex-start;
   text-align:left;
 
-  /* Reserve space so live updates don�t shift alignment */
+  /* Reserve space so live updates don-t shift alignment */
   min-height:1.4em;
 }
 
@@ -6103,7 +6160,7 @@ th{background:#f9fafb}
  }
 
  #skai-global-status{
-   /* display:none;  � QUARANTINED (redundant; overridden by display:flex below)
+   /* display:none;  - QUARANTINED (redundant; overridden by display:flex below)
       Evidence: this block also sets display:flex later, so none never applies.
       Keeping commented for audit trail; JS visibility control should be handled elsewhere. */
    pointer-events:auto;
@@ -6218,7 +6275,7 @@ th{background:#f9fafb}
   color:#555;
 }
 
-/* .skai-hero-lottery � QUARANTINED duplicate.
+/* .skai-hero-lottery - QUARANTINED duplicate.
    Evidence: same selector redefined later in this chunk with margin:4px 0 0.
    Keeping later definition as source of truth. */
 /*
@@ -6285,7 +6342,7 @@ th{background:#f9fafb}
       margin-bottom: 16px;
     }
 
-    /* Sticky header with 0�100 bar + status line */
+    /* Sticky header with 0-100 bar + status line */
     #skai-run-header{
       display: none; /* shown only while a run is active */
       position: sticky;
@@ -6363,13 +6420,13 @@ th{background:#f9fafb}
 
 
 
-<!-- SKAI: Act 1 � Tuned SKAI story (status + proof + patterns) -->
+<!-- SKAI: Act 1 - Tuned SKAI story (status + proof + patterns) -->
 <section class="skai-story" role="region" aria-label="SKAI tuned analysis and performance">
 
   <!-- 1. Hero heading -->
   <header class="skai-story-header">
     <h2 class="skai-h2">
-      Today�s SKAI analysis for
+      Today-s SKAI analysis for
       <?php
         // Use master JSON fields:
         //   $lotteryName: "Powerball", "Daily Million 2PM", etc.
@@ -6424,13 +6481,13 @@ th{background:#f9fafb}
           </p>
           <p class="skai-bt-kv">
             <strong>What SKAI chose:</strong><br>
-            � History window: <?php echo $autoW; ?> draws<br>
-            � Smoothing level (K value): <?php echo $autoK; ?>
+            - History window: <?php echo $autoW; ?> draws<br>
+            - Smoothing level (K value): <?php echo $autoK; ?>
           </p>
           <p class="skai-bt-kv">
             <strong>How this setting performed:</strong><br>
-            � Average backtest score: <?php echo number_format($autoAvg, 2); ?><br>
-            � Hit at least one main ball: <?php echo number_format($autoHitRate * 100.0, 1); ?>%
+            - Average backtest score: <?php echo number_format($autoAvg, 2); ?><br>
+            - Hit at least one main ball: <?php echo number_format($autoHitRate * 100.0, 1); ?>%
           </p>
         </div>
       </div>
@@ -6463,9 +6520,9 @@ th{background:#f9fafb}
     <div class="skai-pi-card">
       <h4 class="skai-pi-title">Main</h4>
       <p class="skai-pi-counts">
-        Stable: <strong><?php echo (int)($piMain['counts']['stable'] ?? 0); ?></strong> �
-        Volatile: <strong><?php echo (int)($piMain['counts']['volatile'] ?? 0); ?></strong> �
-        Reset: <strong><?php echo (int)($piMain['counts']['reset'] ?? 0); ?></strong> �
+        Stable: <strong><?php echo (int)($piMain['counts']['stable'] ?? 0); ?></strong> -
+        Volatile: <strong><?php echo (int)($piMain['counts']['volatile'] ?? 0); ?></strong> -
+        Reset: <strong><?php echo (int)($piMain['counts']['reset'] ?? 0); ?></strong> -
         Transition: <strong><?php echo (int)($piMain['counts']['transition'] ?? 0); ?></strong>
       </p>
       <?php if (!empty($piMain['top'])): ?>
@@ -6490,9 +6547,9 @@ th{background:#f9fafb}
     <div class="skai-pi-card">
       <h4 class="skai-pi-title">Extra</h4>
       <p class="skai-pi-counts">
-        Stable: <strong><?php echo (int)($piExtra['counts']['stable'] ?? 0); ?></strong> �
-        Volatile: <strong><?php echo (int)($piExtra['counts']['volatile'] ?? 0); ?></strong> �
-        Reset: <strong><?php echo (int)($piExtra['counts']['reset'] ?? 0); ?></strong> �
+        Stable: <strong><?php echo (int)($piExtra['counts']['stable'] ?? 0); ?></strong> -
+        Volatile: <strong><?php echo (int)($piExtra['counts']['volatile'] ?? 0); ?></strong> -
+        Reset: <strong><?php echo (int)($piExtra['counts']['reset'] ?? 0); ?></strong> -
         Transition: <strong><?php echo (int)($piExtra['counts']['transition'] ?? 0); ?></strong>
       </p>
       <?php if (!empty($piExtra['top'])): ?>
@@ -6533,73 +6590,78 @@ th{background:#f9fafb}
 
 <div class="skai-divider"></div>
 
-<section class="skai-advanced" role="region" aria-label="Advanced Analysis � Skip &amp; Hit">
-  <h2 class="skai-h2">Advanced Analysis � Skip &amp; Hit</h2>
+<section class="skai-advanced" role="region" aria-label="Advanced Analysis - Skip &amp; Hit">
+  <h2 class="skai-h2">Advanced Analysis - Skip &amp; Hit</h2>
   <p class="skai-advanced-subline">
-    Use these Skip &amp; Hit tables to see which numbers are hitting more often, which ones have been skipping for a while, and SKAI�s estimated chance that each number will hit on the next draw.
+    Use these Skip &amp; Hit tables to see which numbers are hitting more often, which ones have been skipping for a while, and SKAI-s estimated chance that each number will hit on the next draw.
   </p>
   <p class="skai-advanced-subline skai-advanced-subline--note">
     <strong>Chance to hit next</strong> is the plain-English name for <strong>P(hit|k)</strong>. <strong>Reset</strong> (highlighted in yellow) means that number just hit in the latest draw, so its skip counter has gone back to 0.
   </p>
 
 
-  <!-- CANONICAL Main Skip & Hit block -->
-  <div class="skai-skiphit skai-skiphit--main" role="region" aria-label="Skip &amp; Hit � Main Balls">
-    <p class="skai-reset-note">
-      <strong>�Reset� (yellow)</strong> means that number just hit in the latest draw, so its skip counter has gone back to 0.
-    </p>
-    <h3 class="skai-h3">Skip &amp; Hit � Main Balls</h3>
+  <!-- CANONICAL Main Skip & Hit block (collapsible, collapsed by default) -->
+  <details class="skai-skiphit skai-skiphit--main skai-details-collapsible" aria-label="Skip &amp; Hit - Main Balls">
+    <summary class="skai-details-summary">
+      <h3 class="skai-h3">Skip &amp; Hit - Main Balls</h3>
+      <span class="skai-details-caret" aria-hidden="true"></span>
+    </summary>
+    <div class="skai-details-content">
+      <p class="skai-reset-note">
+        <strong>-Reset- (yellow)</strong> means that number just hit in the latest draw, so its skip counter has gone back to 0.
+      </p>
 
-    <?php if (!empty($mainSkipHitRows)): ?>
-    <table class="skai-table skai-sortable" role="table" aria-live="polite">
-      <caption class="skai-visually-hidden">Skip and Hit metrics for main balls</caption>
-      <thead>
-        <tr>
-          <th scope="col" data-key="label"   aria-sort="none">Ball</th>
-          <th scope="col" data-key="skip"    aria-sort="none">Skip</th>
-          <th scope="col" data-key="hits"    aria-sort="none">Hits</th>
-          <th scope="col" data-key="pattern" aria-sort="none">Pattern</th>
-          <th scope="col" data-key="prob" aria-sort="descending"
-              title="Chance this number will hit in the next draw, based on how long it has been skipping.">
-            Chance to hit next (P(hit|k))
-          </th>
-          <th scope="col" data-key="support" aria-sort="none">Support</th>
-          <th scope="col"
-              data-key="cooc"
-              aria-sort="none"
-              title="How often this ball has appeared in the same draw as SKAI�s stronger numbers over the last <?php echo (int)$coK; ?> draws.">
-            Partner hits (<?php echo (int)$coK; ?>)
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($mainSkipHitRows as $row): ?>
+      <?php if (!empty($mainSkipHitRows)): ?>
+      <table class="skai-table skai-sortable" role="table" aria-live="polite">
+        <caption class="skai-visually-hidden">Skip and Hit metrics for main balls</caption>
+        <thead>
           <tr>
-            <td><?php echo htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8'); ?></td>
-            <td><?php echo (int)$row['skip']; ?></td>
-            <td><?php echo (int)$row['hits']; ?></td>
-
-            <td
-              class="<?php echo htmlspecialchars($row['pattern_class'] ?? ('pi-' . strtolower((string)($row['pattern'] ?? 'transition'))), ENT_QUOTES, 'UTF-8'); ?>"
-              title="<?php echo htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-              aria-label="<?php echo htmlspecialchars($row['aria_label'] ?? ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-              <?php echo htmlspecialchars($row['pattern'] ?? 'Transition', ENT_QUOTES, 'UTF-8'); ?>
-            </td>
-
-            <td><?php echo htmlspecialchars($row['prob_t'], ENT_QUOTES, 'UTF-8'); ?></td>
-            <td><?php echo (int)$row['hitk']; ?>/<?php echo (int)$row['sup']; ?></td>
-            <td><?php echo isset($row['cooc']) ? (int)$row['cooc'] : 0; ?></td>
+            <th scope="col" data-key="label"   aria-sort="none">Ball</th>
+            <th scope="col" data-key="skip"    aria-sort="none">Skip</th>
+            <th scope="col" data-key="hits"    aria-sort="none">Hits</th>
+            <th scope="col" data-key="pattern" aria-sort="none">Pattern</th>
+            <th scope="col" data-key="prob" aria-sort="descending"
+                title="Chance this number will hit in the next draw, based on how long it has been skipping.">
+              Chance to hit next (P(hit|k))
+            </th>
+            <th scope="col" data-key="support" aria-sort="none">Support</th>
+            <th scope="col"
+                data-key="cooc"
+                aria-sort="none"
+                title="How often this ball has appeared in the same draw as SKAI-s stronger numbers over the last <?php echo (int)$coK; ?> draws.">
+              Partner hits (<?php echo (int)$coK; ?>)
+            </th>
           </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-    <?php else: ?>
-      <p class="skai-empty" role="note">No main-ball data available.</p>
-    <?php endif; ?>
-  </div>
+        </thead>
+        <tbody>
+          <?php foreach ($mainSkipHitRows as $row): ?>
+            <tr>
+              <td><?php echo htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo (int)$row['skip']; ?></td>
+              <td><?php echo (int)$row['hits']; ?></td>
+
+              <td
+                class="<?php echo htmlspecialchars($row['pattern_class'] ?? ('pi-' . strtolower((string)($row['pattern'] ?? 'transition'))), ENT_QUOTES, 'UTF-8'); ?>"
+                title="<?php echo htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                aria-label="<?php echo htmlspecialchars($row['aria_label'] ?? ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                <?php echo htmlspecialchars($row['pattern'] ?? 'Transition', ENT_QUOTES, 'UTF-8'); ?>
+              </td>
+
+              <td><?php echo htmlspecialchars($row['prob_t'], ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo (int)$row['hitk']; ?>/<?php echo (int)$row['sup']; ?></td>
+              <td><?php echo isset($row['cooc']) ? (int)$row['cooc'] : 0; ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+      <?php else: ?>
+        <p class="skai-empty" role="note">No main-ball data available.</p>
+      <?php endif; ?>
+    </div>
+  </details>
 
 <?php if (!empty($hasExtra)): ?>
-  <div class="skai-skiphit skai-skiphit--extra" role="region" aria-label="Skip &amp; Hit � Extra Balls">
+  <div class="skai-skiphit skai-skiphit--extra" role="region" aria-label="Skip &amp; Hit - Extra Balls">
   <?php /* keep this block OPEN; the closing </div> and corresponding endif; appear after the Extra table below */ ?>
 
     <!-- SKAI: Auto-Tune Results (summary only, Option B) -->
@@ -6639,13 +6701,13 @@ th{background:#f9fafb}
            </p>
 <p class="skai-bt-kv">
   <strong>What SKAI chose:</strong><br>
-  � History window: <?php echo $autoW; ?> draws<br>
-  � Smoothing level (K value): <?php echo $autoK; ?>
+  - History window: <?php echo $autoW; ?> draws<br>
+  - Smoothing level (K value): <?php echo $autoK; ?>
 </p>
 <p class="skai-bt-kv">
   <strong>How this setting performed:</strong><br>
-  � Average backtest score: <?php echo number_format($autoAvg, 2); ?><br>
-  � Hit at least one main ball: <?php echo number_format($autoHitRate * 100.0, 1); ?>%
+  - Average backtest score: <?php echo number_format($autoAvg, 2); ?><br>
+  - Hit at least one main ball: <?php echo number_format($autoHitRate * 100.0, 1); ?>%
 </p>
           </div>
         </div>
@@ -6654,8 +6716,8 @@ th{background:#f9fafb}
 
     <div class="skai-divider"></div>
 
-	<!-- SKAI: Rolling Backtest (SKAI Performance) � hidden here; canonical backtest lives in Act 1 -->
-	<div class="skai-bt" role="region" aria-label="SKAI Backtest Performance" style="display:none">	  <h3 class="skai-h3">SKAI Backtest � Proof of Performance</h3>
+	<!-- SKAI: Rolling Backtest (SKAI Performance) - hidden here; canonical backtest lives in Act 1 -->
+	<div class="skai-bt" role="region" aria-label="SKAI Backtest Performance" style="display:none">	  <h3 class="skai-h3">SKAI Backtest - Proof of Performance</h3>
 	  <p class="skai-backtest-subline">
 	    These results reflect the same settings SKAI used for your prediction today.
 	  </p>
@@ -6688,7 +6750,7 @@ th{background:#f9fafb}
         <p class="skai-bt-kv">
           <strong>Historical performance score:</strong>
           <?php echo number_format($btAvg, 2); ?>
-          (main � <?php echo $wMain; ?><?php if ($btHasExtra): ?>, extra � <?php echo $wExtra; ?><?php endif; ?>)
+          (main - <?php echo $wMain; ?><?php if ($btHasExtra): ?>, extra - <?php echo $wExtra; ?><?php endif; ?>)
         </p>
         <p class="skai-bt-kv">
           <strong>At least 1 main hit:</strong>
@@ -6805,7 +6867,7 @@ th{background:#f9fafb}
     <div class="skai-help-body">
       <p><strong>Laplace K</strong> is a tiny 'guard rail' that prevents zero or tiny sample sizes from making our probability estimates (<code>P(hit|k)</code>) too extreme.</p>
       <ul>
-        <li><strong>K = 0</strong> (no smoothing): uses raw counts only. Best when you have lots of data and want maximum sensitivity � but it can overreact to noise.</li>
+        <li><strong>K = 0</strong> (no smoothing): uses raw counts only. Best when you have lots of data and want maximum sensitivity - but it can overreact to noise.</li>
         <li><strong>K = 1</strong> (default): gentle smoothing. Safer for typical lottery histories; reduces overfitting without hiding real signals.</li>
         <li><strong>K = 2</strong> (extra smoothing): more conservative. Helpful when data is sparse or very volatile, but it may mute short-term spikes.</li>
       </ul>
@@ -6853,53 +6915,58 @@ th{background:#f9fafb}
   <?php endif; ?>
 </div>
 
-    <h3 class="skai-h3">Skip &amp; Hit � Extra Balls</h3>
-
-    <?php if (!empty($extraSkipHitRows)): ?>
-<table class="skai-table skai-sortable" role="table" aria-live="polite">
-  <caption class="skai-visually-hidden">Skip and Hit metrics for extra balls</caption>
-  <thead>
-    <tr>
-      <th scope="col" data-key="label"   aria-sort="none">Ball</th>
-      <th scope="col" data-key="skip"    aria-sort="none">Skip</th>
-      <th scope="col" data-key="hits"    aria-sort="none">Hits</th>
-      <th scope="col" data-key="pattern" aria-sort="none">Pattern</th>
-      <th scope="col" data-key="prob"    aria-sort="none">P(hit|k)</th>
-          <th scope="col" data-key="support" aria-sort="none">Support</th>
-          <th scope="col"
-              data-key="cooc"
-              aria-sort="none"
-              title="How often this extra ball has appeared in the same draw as SKAI�s stronger numbers over the last <?php echo (int)$coK; ?> draws.">
-            Partner hits (<?php echo (int)$coK; ?>)
-          </th>
-    </tr>
-  </thead>
+  <!-- CANONICAL Extra Skip & Hit block (collapsible, collapsed by default) -->
+  <details class="skai-skiphit skai-skiphit--extra skai-details-collapsible" aria-label="Skip &amp; Hit - Extra Balls">
+    <summary class="skai-details-summary">
+      <h3 class="skai-h3">Skip &amp; Hit - Extra Balls</h3>
+      <span class="skai-details-caret" aria-hidden="true"></span>
+    </summary>
+    <div class="skai-details-content">
+      <?php if (!empty($extraSkipHitRows)): ?>
+      <table class="skai-table skai-sortable" role="table" aria-live="polite">
+        <caption class="skai-visually-hidden">Skip and Hit metrics for extra balls</caption>
+        <thead>
+          <tr>
+            <th scope="col" data-key="label"   aria-sort="none">Ball</th>
+            <th scope="col" data-key="skip"    aria-sort="none">Skip</th>
+            <th scope="col" data-key="hits"    aria-sort="none">Hits</th>
+            <th scope="col" data-key="pattern" aria-sort="none">Pattern</th>
+            <th scope="col" data-key="prob"    aria-sort="none">P(hit|k)</th>
+            <th scope="col" data-key="support" aria-sort="none">Support</th>
+            <th scope="col"
+                data-key="cooc"
+                aria-sort="none"
+                title="How often this extra ball has appeared in the same draw as SKAI-s stronger numbers over the last <?php echo (int)$coK; ?> draws.">
+              Partner hits (<?php echo (int)$coK; ?>)
+            </th>
+          </tr>
+        </thead>
         <tbody>
           <?php foreach ($extraSkipHitRows as $row): ?>
             <tr>
-<td><?php echo htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8'); ?></td>
+              <td><?php echo htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8'); ?></td>
               <td><?php echo (int)$row['skip']; ?></td>
               <td><?php echo (int)$row['hits']; ?></td>
 
-             <td
-              class="<?php echo htmlspecialchars($row['pattern_class'] ?? ('pi-' . strtolower((string)($row['pattern'] ?? 'transition'))), ENT_QUOTES, 'UTF-8'); ?>"
-              title="<?php echo htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-              aria-label="<?php echo htmlspecialchars($row['aria_label'] ?? ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-              <?php echo htmlspecialchars($row['pattern'] ?? 'Transition', ENT_QUOTES, 'UTF-8'); ?>
-            </td>
+              <td
+                class="<?php echo htmlspecialchars($row['pattern_class'] ?? ('pi-' . strtolower((string)($row['pattern'] ?? 'transition'))), ENT_QUOTES, 'UTF-8'); ?>"
+                title="<?php echo htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                aria-label="<?php echo htmlspecialchars($row['aria_label'] ?? ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                <?php echo htmlspecialchars($row['pattern'] ?? 'Transition', ENT_QUOTES, 'UTF-8'); ?>
+              </td>
 
-             <td><?php echo htmlspecialchars($row['prob_t'], ENT_QUOTES, 'UTF-8'); ?></td>
-
+              <td><?php echo htmlspecialchars($row['prob_t'], ENT_QUOTES, 'UTF-8'); ?></td>
               <td><?php echo (int)$row['hitk']; ?>/<?php echo (int)$row['sup']; ?></td>
               <td><?php echo isset($row['cooc']) ? (int)$row['cooc'] : 0; ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
-    <?php else: ?>
-      <p class="skai-empty" role="note">No extra-ball data available.</p>
-    <?php endif; ?>
-  </div>
+      <?php else: ?>
+        <p class="skai-empty" role="note">No extra-ball data available.</p>
+      <?php endif; ?>
+    </div>
+  </details>
 <?php endif; ?>
 
 <div class="skai-divider"></div>
@@ -6949,7 +7016,7 @@ th{background:#f9fafb}
       </div>
 
       <label class="skai-label" for="skai-notes">Notes (optional)</label>
-      <textarea id="skai-notes" name="notes" rows="2" class="skai-textarea" placeholder="Add a short note�"></textarea>
+      <textarea id="skai-notes" name="notes" rows="2" class="skai-textarea" placeholder="Add a short note-"></textarea>
 
       <div class="skai-save-actions">
         <button type="button" id="skai-build-payload" class="skai-btn">Build from table</button>
@@ -6970,7 +7037,7 @@ th{background:#f9fafb}
 <details class="skai-help" aria-labelledby="help-phitk-title">
   <summary id="help-phitk-title" class="skai-help-summary">What is P(hit|k)?</summary>
   <div class="skai-help-body">
-    <p><strong>P(hit|k)</strong> means �the chance this number hits on the next draw, given its current <em>skip</em> is <code>k</code>.� A number�s <em>skip</em> is how many draws it has missed since it last appeared.</p>
+    <p><strong>P(hit|k)</strong> means -the chance this number hits on the next draw, given its current <em>skip</em> is <code>k</code>.- A number-s <em>skip</em> is how many draws it has missed since it last appeared.</p>
     <p>We estimate it from past draws at the same skip value using Laplace smoothing:</p>
     <pre><code>P(hit|k) = (hits_at_skip_k + K) / (trials_at_skip_k + 2K)</code></pre>
     <ul>
@@ -6990,8 +7057,8 @@ th{background:#f9fafb}
  
 <?php endif; ?>
 
-<div class="skai-skiphit skai-skiphit--main-legacy" role="region" aria-label="Skip &amp; Hit � Main Balls (Legacy Copy)" aria-hidden="true" style="display:none">
-  <h3 class="skai-h3">Skip &amp; Hit � Main Balls</h3>
+<div class="skai-skiphit skai-skiphit--main-legacy" role="region" aria-label="Skip &amp; Hit - Main Balls (Legacy Copy)" aria-hidden="true" style="display:none">
+  <h3 class="skai-h3">Skip &amp; Hit - Main Balls</h3>
 
   <?php if (!empty($mainSkipHitRows)): ?>
 <table class="skai-table skai-sortable" role="table" aria-live="polite">
@@ -7061,7 +7128,7 @@ th{background:#f9fafb}
       <div id="skai-run-header-main">
         <div id="skai-run-title">SKAI engine activity</div>
         <div id="skai-run-status">
-          When you run SKAI, you�ll see live progress here from 0�100%.
+          When you run SKAI, you-ll see live progress here from 0-100%.
         </div>
         <div
           class="skai-run-progress-outer"
@@ -7087,7 +7154,7 @@ th{background:#f9fafb}
   <div class="skai-hero" id="skai-hero">
 <h1>Predict Smarter. Play Wiser.</h1>
 <p class="skai-tagline">
-  SKAI learns from thousands of past draws to surface statistically optimized number sets � fast, transparent, and responsible.
+  SKAI learns from thousands of past draws to surface statistically optimized number sets - fast, transparent, and responsible.
 </p>
 <p class="skai-hero-lottery">
   You&rsquo;re analyzing:
@@ -7160,7 +7227,7 @@ th{background:#f9fafb}
 
 
 <div id="skai-run-banner" class="skai-run-banner" hidden>
-<span class="txt">All set � SKAI is tuned and ready.</span>
+<span class="txt">All set - SKAI is tuned and ready.</span>
 </div>
 
 
@@ -7224,9 +7291,9 @@ th{background:#f9fafb}
   </p>
 
   <ul class="opt-help-list">
-    <li><strong>0�30%</strong> &mdash; <strong>Skip-leaning:</strong> favors long-term patterns and overdue numbers.</li>
-    <li><strong>40�60%</strong> &mdash; <strong>Hybrid (recommended):</strong> balanced mix of SKAI�s AI and Skip &amp; Hit behavior.</li>
-    <li><strong>70�100%</strong> &mdash; <strong>AI-leaning:</strong> lets the neural model explore more creative combinations.</li>
+    <li><strong>0-30%</strong> &mdash; <strong>Skip-leaning:</strong> favors long-term patterns and overdue numbers.</li>
+    <li><strong>40-60%</strong> &mdash; <strong>Hybrid (recommended):</strong> balanced mix of SKAI-s AI and Skip &amp; Hit behavior.</li>
+    <li><strong>70-100%</strong> &mdash; <strong>AI-leaning:</strong> lets the neural model explore more creative combinations.</li>
   </ul>
 
   <p class="opt-help-note">
@@ -7236,17 +7303,17 @@ th{background:#f9fafb}
 
 <!-- Selected summary (no confirmation checkbox) -->
 <div id="skai-selection-summary" class="opt-summary" style="margin-top:8px" aria-live="polite">
-Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40% (Hybrid)
+Selected: Profile = Balanced - Strategy = Hybrid - Blend = Skip 60% / AI 40% (Hybrid)
 </div>
 <div id="skai-reset-wrap" style="margin-top:6px">
 <button type="button" id="skai-reset-selections" class="link-reset"
-  aria-label="Reset selections to defaults (Balanced � Hybrid � Blend 40%)">
+  aria-label="Reset selections to defaults (Balanced - Hybrid - Blend 40%)">
     Reset selections to defaults
   </button>
 </div>
 
 
-<!-- ===== Confidence � Recommendation (World-class UX micro-explainer) ===== -->
+<!-- ===== Confidence - Recommendation (World-class UX micro-explainer) ===== -->
 <div id="skai-confidence-explainer" class="tile" style="margin:10px 0 14px 0;display:none">
   <div class="panel-header">What SKAI sees right now</div>
 
@@ -7256,25 +7323,25 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
       <div aria-hidden="true" style="flex:1;height:10px;border-radius:999px;background:#eef2f7;border:1px solid #dbe4f0;overflow:hidden">
         <div id="skai-confidence-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#f59e0b,#16a34a);transition:width .25s ease"></div>
       </div>
-      <div id="skai-confidence-score" style="min-width:48px;text-align:right;font-weight:800;color:#0f172a">�%</div>
+      <div id="skai-confidence-score" style="min-width:48px;text-align:right;font-weight:800;color:#0f172a">-%</div>
     </div>
 
 <div id="skai-confidence-label" class="opt-summary" aria-live="polite" style="margin:0">
-  Confidence: � � Recommendation: �
+  Confidence: - - Recommendation: -
 </div>
 
 <!-- Legend for transparency -->
 <div style="font-size:.8rem;color:#6b7280">
   <strong>Guidance:</strong>
-  <em>0�39%</em> Cautious �
-  <em>40�69%</em> Balanced �
-  <em>70�100%</em> Strong
+  <em>0-39%</em> Cautious -
+  <em>40-69%</em> Balanced -
+  <em>70-100%</em> Strong
 </div>
 </div>
 </div>
 </div>
 
-<div id="skai-advanced" class="tile skai-collapsible" data-skai-collapsible style="margin:10px 0 16px 0">
+<div id="skai-advanced" class="tile skai-collapsible skai-collapsed" data-skai-collapsible style="margin:10px 0 16px 0">
 <div class="skai-collapsible-head" data-skai-head data-text-show="Show Custom Settings (Advanced)" data-text-hide="Hide Custom Settings (Advanced)">
   <button id="skai-adv-toggle" class="btn-outline" type="button" style="display:flex;align-items:center;gap:8px" aria-expanded="false">
     <span class="carat" style="display:inline-block;transform:rotate(-90deg);transition:transform .18s ease;"></span>
@@ -7283,7 +7350,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 </div>
 
 
-<div id="skai-adv-body" class="skai-collapsible-body" data-skai-body style="margin-top:10px">
+<div id="skai-adv-body" class="skai-collapsible-body" data-skai-body style="margin-top:10px;display:none">
 
   <!-- Epochs -->
   <label for="skaiadv_epochs">Epochs</label>
@@ -7342,7 +7409,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
     <input type="range" id="skaiadv_layers" min="1" max="12" value="6" step="1">
     <input type="number" id="skaiadv_layers_num" min="1" max="12" value="6">
   </div>
-  <div class="help">How deep SKAI�s neural network is. More layers allow SKAI to capture more complex relationships between numbers, but too many can latch onto noise.</div>
+  <div class="help">How deep SKAI-s neural network is. More layers allow SKAI to capture more complex relationships between numbers, but too many can latch onto noise.</div>
 
   <!-- Activation -->
   <label for="skaiadv_activation">Activation</label>
@@ -7365,7 +7432,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 
 <!-- Diversity Penalty -->
 <div class="help">
-  Controls randomness. Lower (0.6�0.9) = safer; higher (1.0�1.3) = more diverse and riskier.
+  Controls randomness. Lower (0.6-0.9) = safer; higher (1.0-1.3) = more diverse and riskier.
 </div>
 
 <!-- Diversity Penalty -->
@@ -7375,7 +7442,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
   <input type="number" id="skaiadv_diversity_num" min="0" max="0.1" value="0.02" step="0.001">
 </div>
 <div class="help">
-  Reduces repeat numbers. 0.01�0.03 = subtle; higher spreads picks wider but may skip strong ones.
+  Reduces repeat numbers. 0.01-0.03 = subtle; higher spreads picks wider but may skip strong ones.
 </div>
 
 <!-- Gap Scale -->
@@ -7385,7 +7452,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
   <input type="number" id="skaiadv_gap_num" min="0" max="1" value="0.20" step="0.01">
 </div>
 <div class="help">
-  Weight of "gap" (skip distance) in scoring. 0.1�0.3 is typical; higher = stronger skip consideration.
+  Weight of "gap" (skip distance) in scoring. 0.1-0.3 is typical; higher = stronger skip consideration.
 </div>
 
   <!-- Reset to defaults -->
@@ -7429,7 +7496,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 
 <div class="hero-cta-wrap">
 
-<!-- Modal trigger button (no ARIA � reduced code per requirement) -->
+<!-- Modal trigger button (no ARIA - reduced code per requirement) -->
 <button
   type="button"
   id="openSignup"
@@ -7471,7 +7538,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
   </div>
 
   <div class="panel-header">
-    SKAI Hybrid Intelligence � Prediction Center for
+    SKAI Hybrid Intelligence - Prediction Center for
     <?php
       // Reuse the same resolved name if available; else recompute from $lotteryName / $gameId
       if (!isset($skaiLotteryName)) {
@@ -7488,11 +7555,11 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 
   <div class="content">
 <p class="help">
-  This runs a lightweight neural model entirely in your browser. It learns from the same Skip�Hit history used by the server. Click <strong>Run Prediction</strong> to compute fresh picks. Nothing is sent off-site.
+  This runs a lightweight neural model entirely in your browser. It learns from the same Skip-Hit history used by the server. Click <strong>Run Prediction</strong> to compute fresh picks. Nothing is sent off-site.
 </p>
 
     <p class="help" id="ai-skiphit-explain">
-<strong>How Skip�Hit is used</strong> � The model derives features automatically (recent frequency, current skip, short/medium/long recency counts, time-since-seen). You don�t have to run Skip�Hit first. Choose a window if you like, then start <em>AI (ML)</em>.
+<strong>How Skip-Hit is used</strong> - The model derives features automatically (recent frequency, current skip, short/medium/long recency counts, time-since-seen). You don-t have to run Skip-Hit first. Choose a window if you like, then start <em>AI (ML)</em>.
     </p>
 
 
@@ -7503,7 +7570,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
         <div class="skai-results-title">
           <h3 class="skai-results-h3">SKAI picks</h3>
           <p class="skai-results-sub">
-            Ordered from <strong>highest likelihood</strong> to lower likelihood, based on SKAI�s confidence.
+            Ordered from <strong>highest likelihood</strong> to lower likelihood, based on SKAI-s confidence.
           </p>
         </div>
 
@@ -7544,27 +7611,27 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 
       <div id="aiExtraPredictionContainer" class="row" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
 
-      <!-- Hyperparameters (this run) � lives inside the Analysis card, below results -->
+      <!-- Hyperparameters (this run) - lives inside the Analysis card, below results -->
       <div id="skai-param-status">
         <div class="results-section-head">
           Hyperparameters (this run)
         </div>
         <div id="skai-param-status-body" class="help">
-          Loading�
+          Loading-
         </div>
       </div>
 
       <?php
-        // Default label for AI saves � prefer resolved lottery name
+        // Default label for AI saves - prefer resolved lottery name
         // Use $lotteryName when set; otherwise fall back to JSON lotteryName / legacy keys
         $skaiAiLotName = (string)(
             ($lotteryName ?? '') !== ''
                 ? $lotteryName
                 : ($lotteryConfig['lotteryName'] ?? $lotteryConfig['lottery_name'] ?? $lotteryConfig['game_name'] ?? 'Lottery')
         );
-        $skaiAiLabelDefault = $skaiAiLotName . ' � AI Prediction � ' . date('M j, Y');
+        $skaiAiLabelDefault = $skaiAiLotName . ' - AI Prediction - ' . date('M j, Y');
 
-      // CHG: numeric-safe lottery_id fallback � avoid (int)"ID4" => 0.
+      // CHG: numeric-safe lottery_id fallback - avoid (int)"ID4" => 0.
       $rawAiLotteryId = $lotteryConfig['lottery_id'] ?? $lotteryId ?? 0;
       if (!is_numeric($rawAiLotteryId) && isset($lotteryConfig['game_id']) && is_numeric($lotteryConfig['game_id'])) {
           $rawAiLotteryId = $lotteryConfig['game_id'];
@@ -7656,7 +7723,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
                     name="notes"
                     rows="2"
                     class="skai-textarea"
-                    placeholder="Add a short note�"></textarea>
+                    placeholder="Add a short note-"></textarea>
 
           <div class="skai-save-actions">
             <button type="submit"
@@ -7693,7 +7760,7 @@ Selected: Profile = Balanced � Strategy = Hybrid � Blend = Skip 60% / AI 40%
 
 <?php
 // ========================================================================
-// [JS INDEX] RUNTIME BLOCKS (Ctrl+F by �SKAI Runner/Optimizer Block #�)
+// [JS INDEX] RUNTIME BLOCKS (Ctrl+F by -SKAI Runner/Optimizer Block #-)
 // ------------------------------------------------------------------------
 //  A) Core Shims, Debug, Event Bridge
 //  B) Copy / Export Utilities + Save Wiring
@@ -7789,7 +7856,7 @@ echo json_encode([
    Exposes (globals):
      - None
    Notes:
-     - Safe, runs once per load; doesn�t alter prediction logic.
+     - Safe, runs once per load; doesn-t alter prediction logic.
    ========================================================== */
   ;(function(){
     'use strict';
@@ -7811,7 +7878,7 @@ echo json_encode([
    SKAI Runner/Optimizer Block R1: Global Deduper (SKAI_ONCE)
    Purpose:
      - Prevents duplicate wiring when Sorcerer/Helix re-inject blocks
-     - Lets other blocks safely �run once� by key
+     - Lets other blocks safely -run once- by key
    Depends on:
      - None (should be early)
    Exposes (globals):
@@ -7935,7 +8002,7 @@ echo json_encode([
 
   // Start of Auto-Tune window search
   window.addEventListener('skai:autotune:begin', function(e){
-    setWindowStatus('Auto-Tune window search: preparing candidates�');
+    setWindowStatus('Auto-Tune window search: preparing candidates-');
 
     // Auto-scroll disabled here; we keep this listener only to update status.
   });
@@ -7958,7 +8025,7 @@ echo json_encode([
     }
 
     if (parts.length) {
-      var label = 'Auto-Tune window search: ' + parts.join(' � ');
+      var label = 'Auto-Tune window search: ' + parts.join(' - ');
       setWindowStatus(label);
 
       // NEW: mirror the same rich message into the SKAI orb / bubble
@@ -7975,7 +8042,7 @@ echo json_encode([
     var d = (e && e.detail) || {};
     var best = d.best || d.result || {};
     var W = best.W || best.window || d.bestWindow || d.window || d.W || 'n/a'; // clearer fallback
-    setWindowStatus('Auto-Tune complete � best window W=' + W + '. Training and backtesting are now running.');
+    setWindowStatus('Auto-Tune complete - best window W=' + W + '. Training and backtesting are now running.');
   });
 
   // If something stops or fails
@@ -8289,7 +8356,7 @@ function buildPayload(){
       if (!nj || !tj || !nj.value || !tj.value){
         e.preventDefault();
         var res = buildPayload();
-        if (!res.ok){ var hint = qs('skai-save-hint'); if (hint) hint.textContent = 'Please click �Build from table� first.'; }
+        if (!res.ok){ var hint = qs('skai-save-hint'); if (hint) hint.textContent = 'Please click -Build from table- first.'; }
       }
     });
   }
@@ -8993,7 +9060,7 @@ function buildPayload(){
     | JSON_HEX_QUOT
   ); ?>;
 
-  // �then re-normalize to a plain object if needed (keeps earlier FIX effective)
+  // -then re-normalize to a plain object if needed (keeps earlier FIX effective)
   try {
     var raw = window.SKAI_SERVER.FEATURES;
     var obj;
@@ -9043,7 +9110,7 @@ function buildPayload(){
       var live = document.getElementById('ai-live-status');
       if (live) {
         // UX: clearer, brand-aligned message after Auto-Tune/settings are applied
-        live.textContent = 'Settings updated. SKAI is tuned for your next run � press "Run Prediction" when you are ready.';
+        live.textContent = 'Settings updated. SKAI is tuned for your next run - press "Run Prediction" when you are ready.';
       }
     } catch(_){}
   });
@@ -9247,7 +9314,7 @@ window.setLive = window.setLive || function(msg){
      - window.SKAI_canRun()
      - window.SKAI_bootCheck()
    Notes:
-     - This is your �preflight� logic; stability-critical for Pick-5.
+     - This is your -preflight- logic; stability-critical for Pick-5.
    ========================================================== */
 // Back-compat alias for any legacy callers
   function setStatus(msg){ window.setLive(msg); }
@@ -9332,7 +9399,7 @@ function bootCheck(){
       return false;
     }
 
-    setStatus('SKAI is ready. When you�re happy with the settings, press "Run Prediction".');
+    setStatus('SKAI is ready. When you-re happy with the settings, press "Run Prediction".');
 
     // Enable the canonical Run button now that features are ready
     try {
@@ -9529,12 +9596,12 @@ function bindButtons(){
           el.getAttribute('role') === 'button' ||
           el.matches && el.matches('button, input, a, [role="button"]');
 
-        // Always neuter clickability�
+        // Always neuter clickability-
         el.disabled = true;
         el.style.pointerEvents = 'none';
         el.style.opacity = '0.3';
 
-        // �but ONLY remove from layout if it�s truly a trigger/control.
+        // -but ONLY remove from layout if it-s truly a trigger/control.
         if (isControl) {
           el.style.display = 'none';
           el.setAttribute('aria-hidden','true');
@@ -9562,7 +9629,7 @@ function bindButtons(){
 </script>
 
 <script>
-// SKAI progress overlay � real-only progress from canonical events; IDs aligned; API = SKAI_Progress.show/set/done
+// SKAI progress overlay - real-only progress from canonical events; IDs aligned; API = SKAI_Progress.show/set/done
 ;(function(){
   function clamp01(n){ n = Number(n||0); return n<0?0:n>1?1:n; }
 
@@ -9611,7 +9678,7 @@ function bindButtons(){
   if (typeof window.__SKAI_T0__ === 'undefined') window.__SKAI_T0__ = 0;
 
   var _t0 = 0;
-  var __lastEta = '�';
+  var __lastEta = '-';
 
 
   // B-01: helper to pretty-print ETA seconds as "Xm Ys"
@@ -9944,7 +10011,7 @@ window.addEventListener('skai:data:ready', function(){
    try { if (P && typeof P.set  === 'function') P.set(5, _msg_train); } catch(_){}
  });
 
-/* NEW: advance progress on main epochs (maps to 5�72%) */
+/* NEW: advance progress on main epochs (maps to 5-72%) */
 window.addEventListener('skai:ml:epoch', function(e){
   var d = (e && e.detail) || {};
   var total = Number(d.totalEpochs||0);
@@ -9989,12 +10056,12 @@ try {
    window.addEventListener('skai:extra:epoch', function(e){
      var d = (e && e.detail) || {};
      if (d.totalEpochs > 0){
-       // CHG: map extra epochs into a tail band (80�95%) instead of 0�100.
+       // CHG: map extra epochs into a tail band (80-95%) instead of 0-100.
        // Reason: prevents the bar "owning" 100% and getting stuck at 99%
        // when the last epoch index is off-by-one. Final 100% is now driven
        // by skai:extra:done / skai:done only.
        var frac = Math.max(0, Math.min(1, d.epoch / d.totalEpochs));
-       var pct  = 80 + Math.round(frac * 15); // 80�95
+       var pct  = 80 + Math.round(frac * 15); // 80-95
        var P    = (typeof window.SKAI_requireProgress === 'function')
          ? window.SKAI_requireProgress()
          : null;
@@ -10045,7 +10112,7 @@ try {
 </script>
 
 <script>
-/* NEW: realtime confidence sink � updates globals and UI if present */
+/* NEW: realtime confidence sink - updates globals and UI if present */
 (function(){
   if (window.__SKAI_CONF_WIRED__) return; window.__SKAI_CONF_WIRED__ = 1;
   window.addEventListener('skai:confidence:update', function(e){
@@ -10132,21 +10199,21 @@ if ((needRationale || needConf) && typeof window.SKAI_generateRationale === 'fun
     } catch(_){}
   });
 
-// 8.6-2: Inject insight action buttons � DISABLED
+// 8.6-2: Inject insight action buttons - DISABLED
 if (typeof window.SKAI_injectInsightActions !== 'function') {
   window.SKAI_injectInsightActions = function(){ /* no-op */ };
 }
 
-// 8.7-3: Keyboard shortcuts for Insights � DISABLED
+// 8.7-3: Keyboard shortcuts for Insights - DISABLED
 if (typeof window.SKAI_bindInsightShortcuts !== 'function') {
   window.SKAI_bindInsightShortcuts = function(){ /* no-op */ };
 }
 
-// 8.11-2: Top-only filter � DISABLED
+// 8.11-2: Top-only filter - DISABLED
 if (typeof window.SKAI_bindTopOnlyFilter !== 'function') {
   window.SKAI_bindTopOnlyFilter = function(){ /* no-op */ };
 }
-// Also disable any �mark top cards� usage
+// Also disable any -mark top cards- usage
 if (typeof window.SKAI_markTopCards !== 'function') {
   window.SKAI_markTopCards = function(){ /* no-op */ };
 }
@@ -10245,7 +10312,7 @@ window.addEventListener('skai:done', function(){
   } catch (_){}
 });
 
- // 8.7-4: Context menu for insights (Apply / Pin / Jump) � DISABLED
+ // 8.7-4: Context menu for insights (Apply / Pin / Jump) - DISABLED
  if (typeof window.SKAI_initInsightContextMenu !== 'function') {
    // Stubbed out to permanently disable right-click menus.
    window.SKAI_initInsightContextMenu = function(){ /* no-op */ };
@@ -10253,7 +10320,7 @@ window.addEventListener('skai:done', function(){
  // (Removed auto-init)
 
 
- // 8.6-3: Actions � Apply Best, Pin, Jump � DISABLED
+ // 8.6-3: Actions - Apply Best, Pin, Jump - DISABLED
  if (typeof window.SKAI_onInsightAction !== 'function') {
    window.SKAI_onInsightAction = function(){ /* no-op */ };
  }
@@ -10310,7 +10377,7 @@ window.addEventListener('skai:done', function(){
           // Show a soft status and continue without stopping the run
 try {
   if (typeof window.setLive === 'function') {
-    window.setLive('Preset skipped � using current sliders.');
+    window.setLive('Preset skipped - using current sliders.');
   }
 } catch (_) {}
         }
@@ -10483,7 +10550,7 @@ var _msg_atStart = (typeof SKAI_msg === 'function') ? SKAI_msg('autoTuneStart') 
 </script>
 
 <script>
-// SKAI � AI Central controller: shows/hides panel and updates stage text on real events.
+// SKAI - AI Central controller: shows/hides panel and updates stage text on real events.
 ;(function(){
   'use strict';
 
@@ -10544,7 +10611,7 @@ window.addEventListener('skai:autotune:begin', function(){
 window.addEventListener('skai:autotune:progress', function(e){
   var d = (e && e.detail) || {};
   var lossTxt = (typeof d.loss === 'number' && isFinite(d.loss)) ? d.loss.toFixed(3) : 'N/A';
-  stage('Auto-Tune', 'W=' + (d.W != null ? d.W : 'n/a') + ' � loss ' + lossTxt); // clearer fallback  /* FIX: replace bad glyph with bullet */
+  stage('Auto-Tune', 'W=' + (d.W != null ? d.W : 'n/a') + ' - loss ' + lossTxt); // clearer fallback  /* FIX: replace bad glyph with bullet */
 });
 
 window.addEventListener('skai:autotune:done', function(e){
@@ -10692,7 +10759,7 @@ window.addEventListener('skai:analysis-stop', function(e){
       var v = parseFloat(s.replace('%',''));
       return {num:isNaN(v)?NaN:v, str:s};
     }
-    // Fraction "3/17" � ratio (a/b); tie-break by a then b
+    // Fraction "3/17" - ratio (a/b); tie-break by a then b
     if (s.indexOf('/')>0){
       var parts = s.split('/');
       var a = parseFloat(parts[0]); var b = parseFloat(parts[1]);
@@ -10722,7 +10789,7 @@ window.addEventListener('skai:analysis-stop', function(e){
       // final tiebreaker: raw label
       return text(aCell).localeCompare(text(bCell)) * dir;
     }
-    // One numeric, one not � numeric first
+    // One numeric, one not - numeric first
     if (!isNaN(aNum) && isNaN(bNum)) return -1 * dir;
     if (isNaN(aNum) && !isNaN(bNum)) return 1 * dir;
 
@@ -11309,7 +11376,7 @@ function buildWhyHtml(map){
     setAutotuneStatus('Auto-Tune: starting...');
   });
 
-  // Live progress � show which window and step we are on
+  // Live progress - show which window and step we are on
   window.addEventListener('skai:autotune:progress', function(e){
     var d    = (e && e.detail) || {};
     var W    = (d.W != null) ? d.W : d.window;
@@ -11330,7 +11397,7 @@ function buildWhyHtml(map){
     setAutotuneStatus('Auto-Tune complete | best window W=' + W + ' | starting training...');
   });
 
-  // If analysis is stopped or errors, don�t leave the user hanging
+  // If analysis is stopped or errors, don-t leave the user hanging
   window.addEventListener('skai:analysis-stop', function(){
     setAutotuneStatus('Auto-Tune stopped or failed. Please try again.');
   });
@@ -11373,7 +11440,7 @@ function callAutoTune() {
       return window.SKAI_autotune();
     }
 
-    // Fallback: generic start event so UI doesn�t break if tuner is missing
+    // Fallback: generic start event so UI doesn-t break if tuner is missing
     if (typeof window.SKAI_emit === 'function') {
       window.SKAI_emit('skai:autotune:begin', {});
     } else if (typeof window.CustomEvent === 'function') {
@@ -11539,9 +11606,9 @@ function callAutoTune() {
 </script>
 
 <script>
-/* Shim a minimal progress API so every caller works, even if the global isn�t defined.
+/* Shim a minimal progress API so every caller works, even if the global isn-t defined.
    Also provides a SKAI_getProgress() bridge and a safe SKAI_Progress object so
-   legacy SKAI_Progress.show() calls don�t throw, but still log clear errors. */
+   legacy SKAI_Progress.show() calls don-t throw, but still log clear errors. */
 (function(){
   'use strict';
   if (typeof window.ensureProgressAPI === 'function' && typeof window.SKAI_getProgress === 'function') return;
@@ -11551,7 +11618,7 @@ function callAutoTune() {
     var bar  = document.getElementById('skaiProgress');
     var host = document.getElementById('skaiProgressHost');
 
-    // If the DOM isn�t wired, do NOT fake success. Log loudly and return null.
+    // If the DOM isn-t wired, do NOT fake success. Log loudly and return null.
     if (!bar || !host) {
       try {
         console.error('[SKAI] Progress DOM missing: #skaiProgress or #skaiProgressHost not found. Progress bar cannot be updated.');
@@ -11606,7 +11673,7 @@ function callAutoTune() {
         return api;
       }
 
-      // Final fallback: safe shell that *logs* errors so you know it�s miswired.
+      // Final fallback: safe shell that *logs* errors so you know it-s miswired.
       var shell = {
         show: function(msg){
           try {
@@ -11855,7 +11922,7 @@ function updateSummary(){
   } catch(_) {}
 
   // 5) (changed) Do NOT auto-mark settings as applied here; Auto-Tune will signal when ready.
-  // Security/logic: Prevents bypassing the �Auto-Tune ? apply tuned params ? ML� sequence.
+  // Security/logic: Prevents bypassing the -Auto-Tune ? apply tuned params ? ML- sequence.
   // (Intentionally no call to SKAI_APPLY_SETTINGS_OK here.)
 
 }
@@ -12987,7 +13054,7 @@ strat = strat || 'N/A';
       if (updating) return;
       updating = true;
       if (nb.value !== r.value) nb.value = r.value;
-      // DO NOT dispatch any events here � avoids infinite loops.
+      // DO NOT dispatch any events here - avoids infinite loops.
       updating = false;
     }
     function syncFromNum(){
@@ -13023,7 +13090,7 @@ strat = strat || 'N/A';
     function copy(){
       var v = (src.type === 'number' || src.type === 'range') ? src.value : (src.value || '');
       if (dst.value !== v) dst.value = v;
-      // No dispatch � downstream code can read the hidden when needed.
+      // No dispatch - downstream code can read the hidden when needed.
     }
 
     // Initialize and keep in sync on user edits
@@ -13223,7 +13290,7 @@ strat = strat || 'N/A';
         // Expose for other modules and clamps
         window.__SKAI_WINDOW_MAX__ = newMax;
 
-        // Raise max to full dataset (don�t dispatch events; no auto-run)
+        // Raise max to full dataset (don-t dispatch events; no auto-run)
         r.max  = String(newMax);
         rn.max = String(newMax);
 
@@ -13309,7 +13376,7 @@ strat = strat || 'N/A';
         (function initWindowMaxOnce(){ /* re-use the original function scope */
           try {
             // call the original code path by invoking the IIFE body again
-            // Since we can�t reference the inner functions directly, just re-execute by copying minimal logic:
+            // Since we can-t reference the inner functions directly, just re-execute by copying minimal logic:
             var total = (function(){
               try {
                 var sv = window.SKAI_SERVER || {};
@@ -13483,12 +13550,12 @@ strat = strat || 'N/A';
     advBody.addEventListener('input', function(e){
       var isField = e && e.target && (e.target.matches('input,select,textarea'));
       if (!isField) return;
-      showBanner('Custom settings updated � these override Profile/Strategy.');
+      showBanner('Custom settings updated - these override Profile/Strategy.');
     }, true);
     advBody.addEventListener('change', function(e){
       var isField = e && e.target && (e.target.matches('input,select,textarea'));
       if (!isField) return;
-      showBanner('Custom settings updated � these override Profile/Strategy.');
+      showBanner('Custom settings updated - these override Profile/Strategy.');
     }, true);
   })();
 
@@ -13551,7 +13618,7 @@ strat = strat || 'N/A';
    SKAI Runner/Optimizer Block 1: Optimizer Selection + Input Sync
    Purpose:
      - Keeps optimizer selections (W/B/CL/K/D etc.) in sync with UI inputs
-     - Applies �best combo� settings into visible sliders/fields
+     - Applies -best combo- settings into visible sliders/fields
      - Normalizes visible *_ui mirrors vs hidden fields
    Depends on:
      - DOM inputs for window/burn-in/laplace/decay/etc.
@@ -13599,7 +13666,7 @@ strat = strat || 'N/A';
     explorative:  { epochs:160, batchSize:32, dropoutRate:0.25, recencyDecay:0.85, windowSize:'auto', blendRatio:0.25, gapScale:0.18 },
     conservative: { epochs: 90, batchSize:32, dropoutRate:0.15, recencyDecay:0.95, windowSize:'auto', blendRatio:0.60, gapScale:0.25 }
   };
-  // Expose a single source of truth for later modules (merge, don�t clobber).
+  // Expose a single source of truth for later modules (merge, don-t clobber).
   try {
     if (!window.SKAI_PRESETS) {
       window.SKAI_PRESETS = PRESETS;
@@ -13687,7 +13754,7 @@ strat = strat || 'N/A';
     // Top one-liner summary
     if ($summary){
       // More brand-level line: reads like a setup, not a debug string
-      $summary.textContent = 'SKAI is set to: ' + prof + ' profile � ' + strat + ' strategy � ' + blend.text;
+      $summary.textContent = 'SKAI is set to: ' + prof + ' profile - ' + strat + ' strategy - ' + blend.text;
     }
 
     // "Quick Overview" panel (the 3 KVs)
@@ -13739,7 +13806,7 @@ strat = strat || 'N/A';
       } catch(_){}
     }
 
-    // Canonical values (backend) � with fallbacks to current canon controls
+    // Canonical values (backend) - with fallbacks to current canon controls
     var epochs       = safe(spec.epochs,       readCanon('epochs', 120));
     var batchSize    = safe(spec.batchSize,    readCanon('batchSize', 32));
     var dropoutRate  = safe(spec.dropoutRate,  readCanon('dropoutRate', 0.20));
@@ -13787,7 +13854,7 @@ strat = strat || 'N/A';
     // Brief banner to confirm that sliders updated from profile
     try {
       if (window.SKAI_notifyCustomChange) {
-    window.SKAI_notifyCustomChange('Profile applied � sliders updated to match.');
+    window.SKAI_notifyCustomChange('Profile applied - sliders updated to match.');
       }
     } catch(_){}
   }  // <-- CLOSE applyProfile()
@@ -13899,7 +13966,7 @@ function setBlend(v){
     // brief notice banner for user feedback
     try {
       if (window.SKAI_notifyCustomChange) {
-        window.SKAI_notifyCustomChange('Strategy applied � AI parameters adjusted.');
+        window.SKAI_notifyCustomChange('Strategy applied - AI parameters adjusted.');
       }
     } catch(_){}
   }  // <-- CLOSE setStrategy()
@@ -14265,7 +14332,7 @@ function fire(el){
 
     silentSync(function(){
 
-  // window size � sync slider + number + pill (dynamic max)
+  // window size - sync slider + number + pill (dynamic max)
       if (obj.windowSize != null){
         var vmax = _winMax();
         var v = clamp(obj.windowSize, 1, vmax);
@@ -14536,7 +14603,7 @@ function syncWindowSlider(v){
 }
 window.syncWindowSlider = window.syncWindowSlider || syncWindowSlider;
 
-// bounds based on known draws � define once or reuse existing
+// bounds based on known draws - define once or reuse existing
 var getWindowMax = window.getWindowMax || function(){
   var n=0;
   try{
@@ -14831,7 +14898,7 @@ function applyAutoTuneSettings(s){
     startAnalysisOnce(reason);
   }
 
-  // Bridge the signals emitted in Section 1's Auto-Tune gate � but only start after settings are applied
+  // Bridge the signals emitted in Section 1's Auto-Tune gate - but only start after settings are applied
   if (typeof window.__SKAI_AT_SETTINGS_REQUIRED__ === 'undefined') window.__SKAI_AT_SETTINGS_REQUIRED__ = true;
   if (typeof window.__SKAI_AT_SETTINGS_APPLIED__ === 'undefined')  window.__SKAI_AT_SETTINGS_APPLIED__  = false;
   if (typeof window.__SKAI_DEFER_START__ === 'undefined')          window.__SKAI_DEFER_START__          = false;
@@ -14996,7 +15063,7 @@ function busy(on){
 </script>
 
 
-<!-- INSERT: Patch B2 � Start gate to ensure Auto-Tune completes before ML -->
+<!-- INSERT: Patch B2 - Start gate to ensure Auto-Tune completes before ML -->
 <script>
 /* ==========================================================
    SKAI Runner/Optimizer Block 3: Auto-Tune Gatekeeper
@@ -15010,7 +15077,7 @@ function busy(on){
    Exposes (globals):
      - None
    Notes:
-     - This is the �traffic cop� between autotune and runner.
+     - This is the -traffic cop- between autotune and runner.
      - Keep exactly here to preserve click timing.
    ========================================================== */
 ;(function(){
@@ -15160,7 +15227,7 @@ var TIPS = {
   },
   'dropoutRate': {
     t: 'Dropout',
-    b: 'Regularization during training that helps prevent overfitting. Typical range is 0.15�0.30.'
+    b: 'Regularization during training that helps prevent overfitting. Typical range is 0.15-0.30.'
   },
   'learningRate': {
     t: 'Learning Rate',
@@ -15222,7 +15289,7 @@ function candidatesFor(id){
     tip.appendChild(tt);
     tip.appendChild(document.createTextNode(String(cfg.b || '')));
 
-    // Stage invisible first, then measure & position to avoid 0�0 sizing
+    // Stage invisible first, then measure & position to avoid 0-0 sizing
     tip.style.visibility = 'hidden';
     tip.classList.add('show');
 
@@ -15306,7 +15373,7 @@ function candidatesFor(id){
 
 <script>
 // -----------------------------------------------------------------------------
-// SKAI: secondary progress bars (Main & Extra) � event-driven, no auto-start
+// SKAI: secondary progress bars (Main & Extra) - event-driven, no auto-start
 // Mounts inside the AI panel under the overall progress bar.
 // Public API: window.SKAI_BARS.main / window.SKAI_BARS.extra (ensure/update/done/reset/setPhase)
 // Emits nothing by itself; it only listens to events.
@@ -15708,7 +15775,7 @@ if (!window.SKAI_AUTOTUNE) {
   };
 }
 
-  // NEW: Unified Event Bridge (window <-> document) � safe, de-duped
+  // NEW: Unified Event Bridge (window <-> document) - safe, de-duped
   (function(){
     try{
       if (!window.__SKAI_EVENT_BRIDGE__){
@@ -15964,7 +16031,7 @@ window.ensureAutoTune = window.ensureAutoTune || ensureAutoTune;
 })(); 
 </script>
 
-<!-- FNR-18A: Lightweight PI Snapshot (Alt+Shift+K) � Sorcerer-safe, no deps -->
+<!-- FNR-18A: Lightweight PI Snapshot (Alt+Shift+K) - Sorcerer-safe, no deps -->
 <script>
 ;(function(){
   'use strict';
@@ -16033,8 +16100,8 @@ window.ensureAutoTune = window.ensureAutoTune || ensureAutoTune;
 
     return '<div>'
         + '<div>Leaderboard n=' + n + '</div>'
-        + '<div>Avg W: ' + Math.round(w) + ' � Mean: ' + mean.toFixed(2) + '</div>'
-        + '<div>MainAvg: ' + main.toFixed(2) + ' � BonusAvg: ' + bonus.toFixed(2) + ' � Cases: ' + Math.round(cases) + '</div>'
+        + '<div>Avg W: ' + Math.round(w) + ' - Mean: ' + mean.toFixed(2) + '</div>'
+        + '<div>MainAvg: ' + main.toFixed(2) + ' - BonusAvg: ' + bonus.toFixed(2) + ' - Cases: ' + Math.round(cases) + '</div>'
         + '<div style="margin-top:6px">Pattern: <strong>' + pat + '</strong></div>'
       + '</div>';
   }
@@ -16260,7 +16327,7 @@ window.ensureAutoTune = window.ensureAutoTune || ensureAutoTune;
     // Publish to window
     window.SKAI_SERVER = data;
 
-    // NEW: mark hydration complete so later fallback boots don�t re-parse
+    // NEW: mark hydration complete so later fallback boots don-t re-parse
     try { window.__SKAI_SERVER_PARSED__ = true; } catch(_){}
 
     // Fire a ready event so panels can render on either order
@@ -16350,7 +16417,7 @@ function ensureATBadge(){
               var parts = [];
               if (w)   parts.push('W=' + w);
               if (pct) parts.push(pct + '%');
-              sub.textContent = parts.length ? parts.join(' \u00b7 ') : 'Optimizing�';
+              sub.textContent = parts.length ? parts.join(' \u00b7 ') : 'Optimizing-';
             }
           } catch(_) {}
         });
@@ -16822,7 +16889,7 @@ function fmt(v){
       var btnSave          = document.getElementById('skai-ai-submit-save');
       var hint             = document.getElementById('skai-ai-save-hint');
 
-      // Basic validation � must have at least one main number to enable saving
+      // Basic validation - must have at least one main number to enable saving
       if (!mainNumbers || !mainNumbers.length) {
         if (hint) {
           hint.textContent = 'Run SKAI AI analysis to enable saving.';
@@ -17056,7 +17123,7 @@ window.addEventListener('skai:ml:done', function(){
   try { if (typeof setLive === 'function') setLive(SKAI_msg('picksComputed')); } catch(_){}
 });
 
-// CHG: done-coordinator � emits skai:done when all phases finished (or no extra)
+// CHG: done-coordinator - emits skai:done when all phases finished (or no extra)
 // NOTE: Duplicate of coordinator in secondary progress-bars block.
 // Keeping for reference, but disabling to avoid double skai:done emits.
 ;/*(function(){
@@ -17233,7 +17300,7 @@ var pctText = (pct == null ? 'N/A' : (String(pct) + '%'));
         // Nothing to copy yet
         try {
           var live0 = document.getElementById('ai-live-status');
-if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
+if (live0) live0.textContent = 'Nothing to copy yet - run AI first.';
         } catch(_) {}
         return;
       }
@@ -17241,7 +17308,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
       var parts = [];
       if (mains.length)  parts.push('Main: '  + mains.join(' '));
       if (extras.length) parts.push('Extra: ' + extras.join(' '));
-        var line = 'SKAI picks � ' + parts.join('  |  ');
+        var line = 'SKAI picks - ' + parts.join('  |  ');
 
       function notifyCopied(){
         try {
@@ -17383,7 +17450,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   // TF loader (singleton) + preload
   window.ensureTF = window.ensureTF || function ensureTF(){
-    // CHG: Strict-scope safe access � use window.tf consistently.
+    // CHG: Strict-scope safe access - use window.tf consistently.
     if (window.tf && typeof window.tf.ready === 'function') return window.tf.ready();
     return new Promise(function(resolve, reject){
       var existing = document.getElementById('tfjs-script') || document.getElementById('tfjs-script-local'); // FIX: check both ids
@@ -17424,7 +17491,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   // Choose TF backend (safe in async code via await; or use .then in non-async)
   window.SKAI_chooseBackend = window.SKAI_chooseBackend || function SKAI_chooseBackend(){
-    // CHG: Strict-scope safe access � use window.tf consistently.
+    // CHG: Strict-scope safe access - use window.tf consistently.
     var tfw = window.tf;
     if (!tfw || typeof tfw.setBackend !== 'function') {
       return Promise.resolve(); // nothing to do
@@ -18011,7 +18078,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
     var phaseLabel = (s.__phaseLabel && String(s.__phaseLabel))
       ? String(s.__phaseLabel)
-      : 'Main numbers � SKAI run';
+      : 'Main numbers - SKAI run';
     var evtName = (s.__eventName && String(s.__eventName)) || 'skai:ml:epoch';
 
     if (!isFinite(totalDisplay) || totalDisplay <= 0) totalDisplay = epochs;
@@ -18084,10 +18151,10 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
             if (window.SKAI_Cockpit && typeof window.SKAI_Cockpit.log === 'function') {
               var _msg = 'Epoch ' + String(epochDisplay) + '/' + String(epochsDisplayTotal);
               if (logs && typeof logs.loss === 'number') {
-                try { _msg += ' � loss=' + logs.loss.toFixed(4); } catch(_){}
+                try { _msg += ' - loss=' + logs.loss.toFixed(4); } catch(_){}
               }
               if (logs && typeof logs.val_loss === 'number') {
-                try { _msg += ' � val_loss=' + logs.val_loss.toFixed(4); } catch(_){}
+                try { _msg += ' - val_loss=' + logs.val_loss.toFixed(4); } catch(_){}
               }
               window.SKAI_Cockpit.log(_msg);
             }
@@ -18164,8 +18231,8 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   /* CHG: QUARANTINED STRAY DUPLICATE BLOCK (feature preserved in fitWithValidation above).
      Reason/benefit:
-       - JS block comments don�t nest; old duplicate had internal /* ... *\/ comments.
-       - Outer comment caused �unterminated comment�.
+       - JS block comments don-t nest; old duplicate had internal /* ... *\/ comments.
+       - Outer comment caused -unterminated comment-.
        - if(false){...} preserves code without executing or breaking parse. */
   if (false) {
     // Accept either { xsTensor, ysTensor } or { xs, ys } or a tuple [xs, ys]
@@ -18180,7 +18247,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
     if (!xsQ || !ysQ) throw new Error('[SKAI] fitWithValidation: Missing xs/ys tensors');
 
     var sQ = settings || {};
-    // ... (QUARANTINED PLACEHOLDER ONLY � do not execute)
+    // ... (QUARANTINED PLACEHOLDER ONLY - do not execute)
   } // end if(false) quarantine
 
 })();
@@ -18548,7 +18615,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
   window.addEventListener('skai:autotune:done', function(e){
     var W = (e && e.detail && (e.detail.W || (e.detail.best && e.detail.best.W))) || 'N/A';
     try {
-      ensureProgressAPI().set(60, 'Auto-Tune complete � W=' + W + ' � starting training...');
+      ensureProgressAPI().set(60, 'Auto-Tune complete - W=' + W + ' - starting training...');
     } catch (_) {}
   });
   */
@@ -18627,15 +18694,15 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
       var text = 'SKAI is ready.';
 
       if (kind === 'tuning') {
-        text = (state && state.text) ? String(state.text) : 'Auto-Tune is running�';
+        text = (state && state.text) ? String(state.text) : 'Auto-Tune is running-';
       } else if (kind === 'tuned') {
         text = (state && state.text) ? String(state.text) : 'Auto-Tune complete. SKAI is ready.';
       } else if (kind === 'training') {
-        text = (state && state.text) ? String(state.text) : 'SKAI is training on your draw history�';
+        text = (state && state.text) ? String(state.text) : 'SKAI is training on your draw history-';
       } else if (kind === 'predicting') {
-        text = (state && state.text) ? String(state.text) : 'SKAI is scoring and ranking numbers�';
+        text = (state && state.text) ? String(state.text) : 'SKAI is scoring and ranking numbers-';
       } else if (kind === 'rendering') {
-        text = (state && state.text) ? String(state.text) : 'SKAI is preparing your picks�';
+        text = (state && state.text) ? String(state.text) : 'SKAI is preparing your picks-';
       } else if (kind === 'ready') {
         text = (state && state.text) ? String(state.text) : 'SKAI is finished. Your picks are ready below.';
       } else if (kind === 'stopped') {
@@ -18680,7 +18747,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
         case 'tuning':
           showEl(spin, true); showEl(dot, false);
           theme   = { bg:'#EFF6FF', br:'#BFDBFE', dot:'#60A5FA', text:'#111' };
-          text    = state.text || 'Auto-Tune running�';
+          text    = state.text || 'Auto-Tune running-';
           subtext = subtext || 'Testing windows';
           break;
 
@@ -18700,21 +18767,21 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
         case 'predicting':
           showEl(spin, true);
           theme   = { bg:'#E0F2FE', br:'#BAE6FD', dot:'#38BDF8', text:'#0C4A6E' };
-          text    = state.text || 'Predicting�';
+          text    = state.text || 'Predicting-';
           subtext = subtext || 'Scoring top numbers';
           break;
 
         case 'rendering':
           showEl(spin, true);
           theme   = { bg:'#F5F3FF', br:'#DDD6FE', dot:'#8B5CF6', text:'#3B0764' };
-          text    = state.text || 'Rendering results�';
+          text    = state.text || 'Rendering results-';
           subtext = subtext || 'Painting number pills';
           break;
 
         case 'saving':
           showEl(spin, true);
           theme   = { bg:'#FFF7ED', br:'#FED7AA', dot:'#F59E0B', text:'#7C2D12' };
-          text    = state.text || 'Saving to dashboard�';
+          text    = state.text || 'Saving to dashboard-';
           subtext = subtext || 'Writing prediction record';
           break;
 
@@ -18755,7 +18822,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
       // CHG: also update progress bar text if pct provided
       try {
         if (state && state.pct != null && typeof ensureProgressAPI === 'function') {
-          ensureProgressAPI().set(state.pct, text + (subtext ? ' � ' + subtext : ''));
+          ensureProgressAPI().set(state.pct, text + (subtext ? ' - ' + subtext : ''));
         }
       } catch(_){}
     }
@@ -18830,7 +18897,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   })(); // CHG: close statusChip IIFE (fixes missing } after function body)
 
-  // Event wiring (support both ?start? and ?begin?) � NOW WITH LIVE TOP-10 LEADERBOARD
+  // Event wiring (support both ?start? and ?begin?) - NOW WITH LIVE TOP-10 LEADERBOARD
   (function(){
 
     // --- Window slider dynamic max & sync -----------------------------------
@@ -19104,7 +19171,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   window.addEventListener('skai:autotune:begin', function(e){
     var total = e && e.detail && e.detail.total ? (e.detail.total|0) : 0;
-    setChip({ kind: 'tuning', text: 'Auto-Tune running�', detail: (total? ('Total windows: ' + total) : 'Testing windows'), pct: 8 });
+    setChip({ kind: 'tuning', text: 'Auto-Tune running-', detail: (total? ('Total windows: ' + total) : 'Testing windows'), pct: 8 });
     ensureTuneUI(); resetTop();
   });
 
@@ -19125,7 +19192,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
     setChip({
       kind: 'tuning',
       text: 'Auto-Tune window search',
-      detail: 'Testing W=' + Wval + (total ? (' � step ' + (idx+1) + ' of ' + total) : ''),
+      detail: 'Testing W=' + Wval + (total ? (' - step ' + (idx+1) + ' of ' + total) : ''),
       pct: pct
     });
   });
@@ -19196,7 +19263,7 @@ if (live0) live0.textContent = 'Nothing to copy yet � run AI first.';
 
   // Prediction + render narrator
   window.addEventListener('skai:ml:predict', function(){
-    setChip({ kind: 'predicting', text: 'Predicting numbers�', detail: 'Ranking top probabilities', pct: 90 });
+    setChip({ kind: 'predicting', text: 'Predicting numbers-', detail: 'Ranking top probabilities', pct: 90 });
   });
 
   window.addEventListener('skai:render:done', function(){
@@ -19544,11 +19611,11 @@ window.runSkaiML = async function runSkaiML() {
   if (window.SKAI_FLAGS && window.SKAI_FLAGS.autotuneRunning) {
     try {
       if (window.SKAI_Progress) {
-        window.SKAI_Progress.show('Waiting for Auto-Tune�');
-        window.SKAI_Progress.set(5, 'Waiting for Auto-Tune�');
+        window.SKAI_Progress.show('Waiting for Auto-Tune-');
+        window.SKAI_Progress.set(5, 'Waiting for Auto-Tune-');
       }
       if (typeof setLive === 'function') {
-        setLive('Waiting for Auto-Tune to finish�');
+        setLive('Waiting for Auto-Tune to finish-');
       }
     } catch (_) {}
 
@@ -19568,7 +19635,7 @@ window.runSkaiML = async function runSkaiML() {
 
   /* CHG: ES5-safe declarations.
      Reason: `let` is ES6 and can throw syntax errors in older Joomla module contexts.
-     Benefit: prevents �missing ) / unexpected token� parse crashes. */
+     Benefit: prevents -missing ) / unexpected token- parse crashes. */
   var xsT, ysT;
 
   // Progress + live label
@@ -19731,7 +19798,7 @@ window.runSkaiML = async function runSkaiML() {
   try { window.dispatchEvent(new Event('skai:dataprep:begin')); } catch(_){}
   /* CHG: var instead of const.
      Reason: ES5 compatibility.
-     Benefit: prevents �unexpected token const� in older browsers. */
+     Benefit: prevents -unexpected token const- in older browsers. */
   var ds = window.buildSkaiDataset(rawDraws, settings);
   try { window.dispatchEvent(new Event('skai:dataprep:done')); } catch(_){}
 
@@ -20176,7 +20243,7 @@ window.runSkaiML = async function runSkaiML() {
       }
 
       // User-controlled AI vs Skip blend override (slider / settings).
-      // settings.blend may be 0�1 or 0�100; normalize to 0�1 and
+      // settings.blend may be 0-1 or 0-100; normalize to 0-1 and
       // interpret it as the AI share for the main head.
       try {
         var alpha = null;
@@ -20186,7 +20253,7 @@ window.runSkaiML = async function runSkaiML() {
           var rawBlend = Number(settings.blend);
           /* CHG: ES5 finite check.
              Reason: Number.isFinite is ES6 and may be undefined in module clients.
-             Benefit: same �accept only real numbers� logic without runtime crashes. */
+             Benefit: same -accept only real numbers- logic without runtime crashes. */
           if (isFinite(rawBlend)) {
             alpha = rawBlend;
           }
@@ -20198,9 +20265,9 @@ window.runSkaiML = async function runSkaiML() {
         }
 
         /* CHG: ES5 finite check for alpha.
-           Reason/Benefit: prevents �Number.isFinite is not a function� errors while preserving normalization. */
+           Reason/Benefit: prevents -Number.isFinite is not a function- errors while preserving normalization. */
         if (alpha !== null && isFinite(alpha)) {
-          // Allow either 0�1 or 0�100; normalize to 0�1
+          // Allow either 0-1 or 0-100; normalize to 0-1
           if (alpha > 1) { alpha = alpha / 100; }
           if (alpha < 0) { alpha = 0; }
           if (alpha > 1) { alpha = 1; }
@@ -21021,7 +21088,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
 
             var t1 = document.createElement('div');
             t1.className = 'skai-loading-title';
-            // CHG: replace mojibake � with a proper ellipsis (Unicode-safe)
+            // CHG: replace mojibake - with a proper ellipsis (Unicode-safe)
             t1.textContent = 'Running analysis\u2026';
 
             var t2 = document.createElement('div');
@@ -21042,7 +21109,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
           hh.setAttribute('data-skai', 'top');
           var tunedNow = !!window.__SKAI_TUNED_THIS_RUN__;
           var tunedSrv = !!(window.SKAI_SERVER && (window.SKAI_SERVER.hasAutoTune || window.SKAI_SERVER.usedWindow));
-          // CHG: replace mojibake � with a proper bullet separator for brand-consistent typography
+          // CHG: replace mojibake - with a proper bullet separator for brand-consistent typography
           hh.textContent = 'SKAI Top Picks (most likely first)' +
             ((tunedNow || tunedSrv) ? ' \u2022 Auto-tuned' : '');
           container.appendChild(hh);
@@ -21085,14 +21152,14 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
           }
         }
 
-        // 3) Save block only becomes �active� once main picks exist
+        // 3) Save block only becomes -active- once main picks exist
         toggleSaveActive(isReadyMain);
 
         // 4) Summary line when ready (unchanged message, brand punctuation)
         if (isReadyMain) {
           var sum = document.getElementById('aiPredictionSummary');
           if (sum){
-            sum.textContent = 'Source: SKAI client ML � Main and extra numbers ready.';
+            sum.textContent = 'Source: SKAI client ML - Main and extra numbers ready.';
           }
         }
 
@@ -21114,7 +21181,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
       } catch(_){}
 
       // ------------------------------------------------------------
-      // SKAI Blend Accuracy � Part C (Missing Combo Builder Added)
+      // SKAI Blend Accuracy - Part C (Missing Combo Builder Added)
       // ------------------------------------------------------------
       // What it is:
       //   A deterministic final-ticket builder that turns Top-N evidence
@@ -21434,7 +21501,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
         setLive(SKAI_msgSafe('readyPicks'));
       }
 
-      // 4) If extras already landed, ensure they�re painted (non-fatal)
+      // 4) If extras already landed, ensure they-re painted (non-fatal)
       if (typeof window.SKAI_renderExtras === 'function') {
         try {
           window.SKAI_renderExtras();
@@ -21594,7 +21661,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
         (typeof logs.val_loss     === 'number' ? (1 - logs.val_loss) : NaN)));
       /* CHG: ES5-safe finite guard.
          Reason: Number.isFinite is ES6 and may be undefined in older clients.
-         Benefit: confidence updates won�t crash or silently stop. */
+         Benefit: confidence updates won-t crash or silently stop. */
       if (!isFinite(conf)) return;
       var pct = clamp01(conf);
       if (pct < lastPct) pct = lastPct; // monotonic during run
@@ -21629,8 +21696,8 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
 </script>
 
 <script>
-/* SKAI Insights wiring � uses existing #skai-insights styles (no ARIA, no new globals)
-   CHG: replaced garbled �?� with an em dash for clean typography and to prevent mojibake. */
+/* SKAI Insights wiring - uses existing #skai-insights styles (no ARIA, no new globals)
+   CHG: replaced garbled -?- with an em dash for clean typography and to prevent mojibake. */
 ;(function(){
   if (window.__SKAI_INSIGHTS_WIRED__) return;
   window.__SKAI_INSIGHTS_WIRED__ = true;
@@ -21673,7 +21740,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
     var confEl = document.querySelector('.skai-conf-pct');
     /* CHG: ES5-safe finite guard.
        Reason: Number.isFinite is ES6; older clients may not support it.
-       Benefit: insights chips won�t fail silently. */
+       Benefit: insights chips won-t fail silently. */
     var confPct = 0;
     if (confEl){
       var v = parseInt((confEl.textContent||'0').replace(/\D+/g,''),10);
@@ -21702,7 +21769,7 @@ window.SKAI_runExtra = function runExtraBallML(settings) {
     if (picks){
       var nums = top.slice(0,10).map(function(x){ return pad2(x.num); }).join(' ');
 var x1 = (topX && topX[0] && topX[0].num != null)
-  ? (' � Extra ' + pad2(topX[0].num))
+  ? (' - Extra ' + pad2(topX[0].num))
   : '';
       picks.textContent = nums ? ('Top: ' + nums + x1) : '';
     }
@@ -21803,7 +21870,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
     var v = parseInt(String(n).replace(/\D/g,''), 10);
     /* CHG: ES5 finite guard.
        Reason: Number.isFinite is ES6.
-       Benefit: copy buttons don�t break on older clients. */
+       Benefit: copy buttons don-t break on older clients. */
     if (!isFinite(v)) return '';
     return (v < 10 ? '0' : '') + v;
   }
@@ -21852,7 +21919,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
     el.addEventListener('click', handler);
   }
 
-  // AI save wiring helper � prepares hidden fields for MyLottoExpert
+  // AI save wiring helper - prepares hidden fields for MyLottoExpert
   // Uses the same pattern as the "Copy SKAI picks" button: top 20 mains, top 5 extras.
   window.skaiPrepareAiSave = window.skaiPrepareAiSave || function (options) {
     options = options || {};
@@ -22033,7 +22100,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
     var parts = [];
     if (mainsAI.length) parts.push('Main: '  + mainsAI.join(' '));
     if (extraAI.length) parts.push('Extra: ' + extraAI.join(' '));
-    // CHG: replace mojibake � with a proper bullet for brand-consistent prefix
+    // CHG: replace mojibake - with a proper bullet for brand-consistent prefix
     var txt = 'SKAI picks \u2022 ' + parts.join('  |  '); // canonical prefix + spacing
 
     copyText(txt).then(function(){
@@ -22093,7 +22160,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
   if (typeof window.SKAI_log  !== 'function') window.SKAI_log  = function(){ try{ if (window.SKAI_DEBUG) console.log.apply(console, arguments); }catch(_){ } };
   if (typeof window.SKAI_warn !== 'function') window.SKAI_warn = function(){ try{ if (window.SKAI_DEBUG) console.warn.apply(console, arguments); }catch(_){ } };
 
-  // Event shim � emits CustomEvent safely (idempotent, payload-normalizing)
+  // Event shim - emits CustomEvent safely (idempotent, payload-normalizing)
   /* CHG: add ES5/legacy CustomEvent fallback.
      Reason: `new CustomEvent` can be undefined in older clients.
      Benefit: all SKAI_* listeners (progress, learned, save-enablers) still fire reliably. */
@@ -22132,7 +22199,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
       if (typeof d.durationMs === 'number') parts.push('duration=' + d.durationMs + 'ms');
       if (d.startedAt)  parts.push('startedAt='  + d.startedAt);
       if (d.finishedAt) parts.push('finishedAt=' + d.finishedAt);
-      // CHG: replace mojibake � with a proper separator bullet in debug log
+      // CHG: replace mojibake - with a proper separator bullet in debug log
       (window.SKAI_log || console.log)(parts.join(' \u2022 '));
     } catch(_){}
   });
@@ -22288,7 +22355,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
       // Default heartbeat timeout: 2 minutes (120000 ms) instead of 30s.
       /* CHG: ES5-safe finite guard.
          Reason: Number.isFinite is ES6.
-         Benefit: watchdog won�t crash on older clients. */
+         Benefit: watchdog won-t crash on older clients. */
       var LIMIT_MS  = isFinite(+LIM.noHeartbeatMs) ? +LIM.noHeartbeatMs : 120000;
 
       // Compute MAX_RUN. If LIM.maxRunMs is not provided, we default to Infinity (no max-run cutoff),
@@ -22383,7 +22450,7 @@ var x1 = (topX && topX[0] && topX[0].num != null)
         var lim = (window.SKAI_LIMITS || {});
         /* CHG: ES5-safe finite guards.
            Reason: Number.isFinite is ES6.
-           Benefit: min-data gate won�t crash; prevents false �no data� stops. */
+           Benefit: min-data gate won-t crash; prevents false -no data- stops. */
         var need = isFinite(+min) ? +min : (isFinite(+lim.minDraws) ? +lim.minDraws : 10);
         var d = window.draws || window.__le_lastFiltered || [];
         return Array.isArray(d) && d.length >= need;
@@ -22479,7 +22546,7 @@ if (typeof window.SKAI_STR !== 'object') {
     mlExtraDone:        'Extra training complete',
     allFinished:        'All steps finished.',
     autoTuneStart:      'Auto-Tune starting...',
-    // CHG: replace mojibake � separators with bullet characters for clean typography.
+    // CHG: replace mojibake - separators with bullet characters for clean typography.
     autoTuneDone:       'Auto-Tune complete \u2022 W={W} \u2022 starting training...',
     finalizing:         'Finalizing predictions...',
     generating:         'Generating predictions...',
@@ -22494,7 +22561,7 @@ if (typeof window.SKAI_STR !== 'object') {
     moduleMissing:      'AI module not loaded on this page.',
     interrupted:        'AI process interrupted...',
     ready:              'Ready',
-    // CHG: replace mojibake � with a bullet separator for consistency.
+    // CHG: replace mojibake - with a bullet separator for consistency.
     readyPicks:         'Ready \u2022 Picks computed',
     // CHG: same typography fix for scoring status.
     scoringPredictions: 'Scoring \u2022 Generating predictions...',
@@ -22702,7 +22769,7 @@ if (typeof window.SKAI_STR !== 'object') {
     window.__SKAI_RUN_ACTIVE__ = true;
     try { if (typeof window.SKAI_emit === 'function') window.SKAI_emit('skai:ml:start'); } catch(_){}
 
-    // FIX: watchdog � if no terminal event arrives, force-unlock UI.
+    // FIX: watchdog - if no terminal event arrives, force-unlock UI.
     // Keeps UX safe even if a promise chain silently aborts.
     try {
       var WD_MS = (window.SKAI_LIMITS && isFinite(+window.SKAI_LIMITS.watchdogMs))
@@ -22768,7 +22835,7 @@ if (typeof window.SKAI_STR !== 'object') {
         window.SKAI_METRICS.lastFinishedAt  = new Date().toISOString();
         window.SKAI_METRICS.totalStopped    = (window.SKAI_METRICS.totalStopped|0) + 1;
         if (window.SKAI_log) {
-          window.SKAI_log('[SKAI] run stopped after ' + dur + 'ms � reason: ' + r);
+          window.SKAI_log('[SKAI] run stopped after ' + dur + 'ms - reason: ' + r);
         }
         try {
           if (typeof window.SKAI_emit === 'function') window.SKAI_emit('skai:telemetry', {
@@ -22786,7 +22853,7 @@ if (typeof window.SKAI_STR !== 'object') {
       try { window.removeEventListener('skai:analysis-stop', onStop); } catch(_){}
     }
 
-    // One-time done/stop listeners (ES5 � no {once:true} objects)
+    // One-time done/stop listeners (ES5 - no {once:true} objects)
     if (typeof window.SKAI_once === 'function') {
       SKAI_once('skai:ml:done', onDone);
       SKAI_once('skai:analysis-stop', onStop);
@@ -22927,7 +22994,7 @@ if (typeof window.SKAI_STR !== 'object') {
         }
         if (!picks || !picks.length) return false;
 
-        // Target host � prefer the dedicated SKAI results row,
+        // Target host - prefer the dedicated SKAI results row,
         // then fall back to older IDs or <body> as a last resort.
         var host = document.querySelector('[data-skai-results]') ||
                    document.getElementById('aiPredictedNumbers') ||
@@ -23183,7 +23250,7 @@ try {
   (function(){
     var __hasScrollTo__ = (typeof window.SKAI_scrollTo === 'function');
 
-// FNR-36: MutationObserver � single instance, throttled, and torn down on done/stop
+// FNR-36: MutationObserver - single instance, throttled, and torn down on done/stop
 (function(){
   var host = document.getElementById('prediction') ||
              document.querySelector('[data-skai-results]') ||
@@ -23336,7 +23403,7 @@ try {
             var fill = pc.querySelector('.fill') || pc.querySelector('.bar > i') || pc.querySelector('.meter > i');
             if (fill && fill.style) fill.style.width = String(pct) + '%';
 
-            // NEW: fallback � also show the label in the inline status text if present
+            // NEW: fallback - also show the label in the inline status text if present
             try{
               var live = document.getElementById('ai-live-status');
               if (live && (d.label || d.pct != null)) {
@@ -23602,7 +23669,7 @@ try {
     } catch(_) {}
   }
 
-  // Prime existing images (single pass) � ES5-safe loop
+  // Prime existing images (single pass) - ES5-safe loop
   try {
     var __imgs0__ = document.querySelectorAll('img');
     for (var ii0 = 0; ii0 < __imgs0__.length; ii0++){ solidify(__imgs0__[ii0]); }
@@ -24018,9 +24085,9 @@ try {
       var blend  = (comp == null) ? conf01 : (0.6 * conf01 + 0.4 * comp);
 
       // Decide final tier using blended signal
-      if (blend < 0.40) return 'Cautious � weak signal; use conservatively or re-run with tweaks.';
-      if (blend < 0.70) return 'Balanced � reasonable signal; consider selective use.';
-      return 'Strong � high signal; suitable for confident picks.';
+      if (blend < 0.40) return 'Cautious - weak signal; use conservatively or re-run with tweaks.';
+      if (blend < 0.70) return 'Balanced - reasonable signal; consider selective use.';
+      return 'Strong - high signal; suitable for confident picks.';
     };
   }
 
@@ -24192,7 +24259,7 @@ try {
 ;(function(){
   'use strict';
 
-  // --- Safe helpers / fallbacks (don�t conflict if you already defined them) ---
+  // --- Safe helpers / fallbacks (don-t conflict if you already defined them) ---
   var _rd = (typeof window.rafDebounce === 'function')
     ? window.rafDebounce
     : function(fn){ return function(){ try{ fn.apply(this, arguments);}catch(_){}}; };
@@ -24223,7 +24290,7 @@ try {
     try { window.setLive({ text: text, busy: false, force: true }); } catch(_){}
   };
 
-  // FNR-49: Single-source setLive shim � prevent later redefinitions and duplicate wrappers
+  // FNR-49: Single-source setLive shim - prevent later redefinitions and duplicate wrappers
   if (!window.__SKAI_SETLIVE_SHIM__) {
     window.__SKAI_SETLIVE_SHIM__ = true;
 
@@ -24334,7 +24401,7 @@ try {
       var bottom = document.getElementById('skai-param-status-body');
       if (bottom) bottom.textContent = line;
 
-      // Hide/silence the tiny inline �Parameters:� line under the main numbers
+      // Hide/silence the tiny inline -Parameters:- line under the main numbers
       var inline = document.getElementById('ai-param-readout');
       if (inline) { inline.textContent = ''; inline.style.display = 'none'; }
     }catch(_){}
@@ -24660,7 +24727,7 @@ var defaults = {epochs:120,batchSize:32,dropoutRate:0.2,learningRate:0.001,hidde
 function whenRunnerReady(timeoutMs){
   var t0 = Date.now(), limit = timeoutMs || 15000;
 
-  // Promise-safe wrapper (older engines won�t crash diagnostics)
+  // Promise-safe wrapper (older engines won-t crash diagnostics)
   var makePromise = (typeof Promise === 'function')
     ? function(executor){ return new Promise(executor); }
     : function(executor){
@@ -24712,7 +24779,7 @@ function whenRunnerReady(timeoutMs){
     if (!el) return false;
     el.value = String(val);
 
-    // FIX: single well-formed try/catch (prevents �missing catch or finally after try�)
+    // FIX: single well-formed try/catch (prevents -missing catch or finally after try-)
     try {
       var ev1, ev2;
       try {
@@ -24866,7 +24933,7 @@ function applyPresetAndMaybeRun(presetName, autoRun){
 
     return waitInputs.then(function(){
 
-      // sanitize (if available) � operates on local clone
+      // sanitize (if available) - operates on local clone
       if (typeof window.SKAI_sanitizePreset === 'function') {
         spec = window.SKAI_sanitizePreset(spec);
       }
@@ -24952,7 +25019,7 @@ function applyPresetAndMaybeRun(presetName, autoRun){
         } catch(_){}
 
         if (!readyOK) {
-          (window.SKAI_warn || console.warn)('[SKAI] recovery failed � insufficient data.');
+          (window.SKAI_warn || console.warn)('[SKAI] recovery failed - insufficient data.');
           try { if (typeof setLive === 'function') setLive('Error: Not enough data to start AI.', 'error'); } catch(_){}
           if (window.SKAI_Progress && typeof window.SKAI_Progress.done === 'function') {
             try { window.SKAI_Progress.done('Error'); } catch(_) {}
@@ -25553,7 +25620,7 @@ window.SKAI_spinnerHide = function(){
 
       applied += wrote;
 
-      // Broadcast a lightweight �params changed� signal
+      // Broadcast a lightweight -params changed- signal
       try {
         var CE = (typeof window.CustomEvent === 'function')
           ? window.CustomEvent
@@ -25643,7 +25710,7 @@ window.SKAI_spinnerHide = function(){
       } catch(_){}
     });
 
-    // Mark �applied� if anything was written OR there are no matching inputs (dashboard variant)
+    // Mark -applied- if anything was written OR there are no matching inputs (dashboard variant)
     if (typeof window.__SKAI_AT_SETTINGS_APPLIED__ === 'undefined') window.__SKAI_AT_SETTINGS_APPLIED__ = false;
     if (applied > 0 || missing.length === ids.length){
       window.__SKAI_AT_SETTINGS_APPLIED__ = true;
@@ -25697,7 +25764,7 @@ window.SKAI_spinnerHide = function(){
           }
         } catch(_){}
 
-        // Let the runner set __SKAI_RUNNING__ itself to avoid �already running?�
+        // Let the runner set __SKAI_RUNNING__ itself to avoid -already running?-
         try { document.documentElement.classList.add('__skai-running'); } catch(_){}
         fn();
       };
@@ -26076,7 +26143,7 @@ function wireOnce(){
 
   btn.addEventListener('click', function(){
     try { (window.setLive || function(){})(); } catch(_){}
- try { (window.setLive || function(){})('Optimizing (Skip & Hit)�'); } catch(_){}
+ try { (window.setLive || function(){})('Optimizing (Skip & Hit)-'); } catch(_){}
     // Safe CustomEvent dispatch (works even on older engines)
     try {
       var CE = (typeof window.CustomEvent === 'function')
@@ -26138,7 +26205,7 @@ try {
      - window.__SKAI_AUTOTUNE_DONE__ (gatekeeper reads this)
      - window.skaiApplyBestCombo() (if defined inside)
    Notes:
-     - This is the Pick-5 �hang hotspot� zone.
+     - This is the Pick-5 -hang hotspot- zone.
      - Leave order and loop timing unchanged.
    ========================================================== */
    
@@ -26280,7 +26347,7 @@ try {
       }
     }
 
-    // 3) Fallbacks � only if config lists were empty.
+    // 3) Fallbacks - only if config lists were empty.
     if (!outM.length){
       // SECURITY NOTE: The following atypical spellings (e.g., "nineth", "twelveth", "thirtheenth")
       // are intentional and MUST remain as-is. They act as canaries/honeytokens matching the
@@ -26418,7 +26485,7 @@ try {
   // Convert histogram ? probability P(hit | skip=k) for each ball (Laplace smoothing optional)
   function toProbTable(hist, laplaceK){
     // Hazard table:
-    //   P(hit next | current skip = s) � (runs ending at s + K) / (runs of length = s + 2K)
+    //   P(hit next | current skip = s) - (runs ending at s + K) / (runs of length = s + 2K)
     var out = Object.create(null);
     var K = isFinite(+laplaceK) ? +laplaceK : 0; // Laplace smoothing
 
@@ -26650,7 +26717,7 @@ function rankByProb(probTable, currentSkips, K){
   function emitAutotuneProgress(percent, detail){
     try{
       var d = detail || {};
-      // Clamp to 0�100 and expose as .percent for the progress bar / ETA listeners
+      // Clamp to 0-100 and expose as .percent for the progress bar / ETA listeners
       d.percent = Math.max(0, Math.min(100, +percent || 0));
 
       // Use SKAI_emit when available; fall back to CustomEvent
